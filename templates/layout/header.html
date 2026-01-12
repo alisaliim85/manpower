@@ -1,143 +1,81 @@
-<header class="header">
-  <div class="header-inner">
-    <div class="logo">مواردي</div>
+<header class="header animate__animated animate__fadeInDown">
+    <div class="header-inner container">
+        <div class="logo">
+            <i class="fas fa-layer-group"></i> <span>مواردي</span>
+        </div>
 
-    <nav class="nav" id="navMenu">
-      <a href="/">الرئيسية</a>
-      <a href="#features">المميزات</a>
-      <a href="#services">الخدمات</a>
-      <a href="#target">المستفيدون</a>
-    </nav>
+        <nav class="nav" id="navMenu">
+            <a href="/"><i class="fas fa-home"></i> الرئيسية</a>
+            <a href="#features">المميزات</a>
+            <a href="#services">الخدمات</a>
+            <a href="#target">المستفيدون</a>
+        </nav>
 
-    {% if request.user.is_authenticated %}
-      <form method="post" action="/accounts/logout/" class="logout-form">
-        {% csrf_token %}
-        <button type="submit" class="logout-btn">تسجيل الخروج</button>
-      </form>
-    {% else %}
-      <a href="/accounts/login/" class="btn-login">تسجيل الدخول</a>
-    {% endif %}
+        <div class="actions">
+            {% if request.user.is_authenticated %}
+                <form method="post" action="/accounts/logout/" style="display:inline">
+                    {% csrf_token %}
+                    <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> خروج</button>
+                </form>
+            {% else %}
+                <a href="/accounts/login/" class="btn-login">دخول <i class="fas fa-arrow-left"></i></a>
+            {% endif %}
+        </div>
 
-    <div class="burger" id="burger">
-      <span></span>
-      <span></span>
-      <span></span>
+        <div class="burger" id="burger">
+            <span></span><span></span><span></span>
+        </div>
     </div>
-  </div>
 </header>
 
 <style>
-/* Header */
-.header {
-  position: sticky;
-  top: 0;
-  width: 100%;
-  background: #fff;
-  box-shadow: 0 6px 20px rgba(0,0,0,.06);
-  z-index: 100;
-}
-
-/* Inner wrapper */
-.header-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 72px;
-  padding: 0 24px; /* هامش يمين ويسار */
-}
-
-/* Logo */
-.logo {
-  font-size: 22px;
-  font-weight: bold;
-  color: #065f46;
-}
-
-/* Navigation */
-.nav a {
-  margin: 0 14px;
-  text-decoration: none;
-  color: #334155;
-  font-weight: 500;
-}
-
-/* Login */
-.btn-login {
-  padding: 8px 18px;
-  background: linear-gradient(135deg,#22c55e,#065f46);
-  color: #fff;
-  border-radius: 999px;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-/* Logout */
-.logout-form {
-  margin: 0;
-}
-
-.logout-btn {
-  background: none;
-  border: none;
-  color: #b91c1c;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 8px 14px;
-}
-
-.logout-btn:hover {
-  text-decoration: underline;
-}
-
-/* Burger */
-.burger {
-  display: none;
-  flex-direction: column;
-  cursor: pointer;
-}
-
-.burger span {
-  width: 26px;
-  height: 3px;
-  background: #065f46;
-  margin: 4px 0;
-}
-
-/* Mobile */
-@media (max-width: 768px) {
-  .nav {
-    position: absolute;
-    top: 72px;
-    right: 0;
-    width: 100%;
-    background: #fff;
-    display: none;
-    flex-direction: column;
-    box-shadow: 0 10px 30px rgba(0,0,0,.08);
-  }
-
-  .nav.active {
-    display: flex;
-  }
-
-  .nav a {
-    padding: 15px 24px;
-    border-bottom: 1px solid #e5e7eb;
-  }
-
-  .burger {
-    display: flex;
-  }
-}
+    .header {
+        position: sticky;
+        top: 0;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        z-index: 1000;
+    }
+    .header-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 80px;
+    }
+    .logo {
+        font-size: 26px;
+        font-weight: 800;
+        color: var(--primary-dark);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .nav a {
+        margin: 0 15px;
+        text-decoration: none;
+        color: var(--dark);
+        font-weight: 600;
+        font-size: 15px;
+        transition: 0.3s;
+    }
+    .nav a:hover { color: var(--primary); }
+    .btn-login {
+        padding: 10px 25px;
+        background: var(--primary);
+        color: #fff;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: 0.3s;
+    }
+    .logout-btn {
+        background: #fee2e2;
+        color: #b91c1c;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 50px;
+        cursor: pointer;
+        font-weight: 600;
+    }
 </style>
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-  const burger = document.getElementById("burger");
-  const navMenu = document.getElementById("navMenu");
-
-  burger.addEventListener("click", function () {
-    navMenu.classList.toggle("active");
-  });
-});
-</script>

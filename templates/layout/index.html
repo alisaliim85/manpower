@@ -1,37 +1,64 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <title>{% block title %}مواردي{% endblock %}</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}مواردي | النظام الذكي{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #064e3b;
+            --secondary: #3b82f6;
+            --dark: #0f172a;
+            --light: #f8fafc;
+        }
 
-  <style>
-    body {
-      margin: 0;
-      font-family: "Tajawal", system-ui;
-      background: #f8fafc;
-      color: #0f172a;
-    }
-    .container {
-      width: 90%;
-      max-width: 1200px;
-      margin: auto;
-    }
-    main {
-      min-height: calc(100vh - 160px);
-    }
-  </style>
+        body {
+            margin: 0;
+            font-family: 'Tajawal', sans-serif;
+            background: var(--light);
+            color: var(--dark);
+            scroll-behavior: smooth;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        main {
+            min-height: calc(100vh - 160px);
+            padding: 40px 0;
+        }
+
+        /* تنسيقات عامة للمساعدة */
+        .badge {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .pending-light { background: #fef3c7; color: #92400e; }
+        .approved-light { background: #dcfce7; color: #15803d; }
+    </style>
 </head>
-
 <body>
 
-  {% include "layout/header.html" %}
+    {% include "layout/header.html" %}
 
-  <main>
-    {% block content %}{% endblock %}
-  </main>
+    <main class="animate__animated animate__fadeIn">
+        {% block content %}{% endblock %}
+    </main>
 
-  {% include "layout/footer.html" %}
+    {% include "layout/footer.html" %}
 
 </body>
 </html>

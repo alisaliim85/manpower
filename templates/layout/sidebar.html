@@ -1,0 +1,160 @@
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-top">
+        <div class="sidebar-logo">
+            <i class="fas fa-layer-group"></i>
+            <span>مواردي</span>
+        </div>
+        
+        <nav class="sidebar-menu">
+            <span class="menu-category">القائمة الرئيسية</span>
+            <a href="/" class="menu-item active">
+                <i class="fas fa-chart-pie"></i>
+                <span>لوحة التحكم</span>
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-file-invoice"></i>
+                <span>طلباتي</span>
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-concierge-bell"></i>
+                <span>الخدمات</span>
+            </a>
+
+            <span class="menu-category">النظام</span>
+            <a href="#" class="menu-item">
+                <i class="fas fa-users-cog"></i>
+                <span>المستفيدون</span>
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-user-shield"></i>
+                <span>الإعدادات</span>
+            </a>
+        </nav>
+    </div>
+
+    <div class="sidebar-bottom">
+        <div class="user-card-sidebar">
+            <div class="user-avatar-sm">
+                {{ request.user.username|slice:":2"|upper }}
+            </div>
+            <div class="user-info-sm">
+                <span class="u-name">{{ request.user.username }}</span>
+                <span class="u-role">مسؤول النظام</span>
+            </div>
+        </div>
+        {% if request.user.is_authenticated %}
+        <form method="post" action="/accounts/logout/">
+            {% csrf_token %}
+            <button type="submit" class="sidebar-logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>خروج</span>
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</aside>
+
+<style>
+    .sidebar {
+        width: var(--sidebar-width);
+        background: #ffffff;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        border-left: 1px solid #edf2f7;
+        transition: all var(--transition-speed) ease;
+        position: sticky;
+        top: 0;
+        right: 0;
+        z-index: 1000;
+    }
+
+    .sidebar-logo {
+        padding: 25px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--primary);
+        font-size: 22px;
+        font-weight: 800;
+    }
+
+    .menu-category {
+        display: block;
+        padding: 10px 25px;
+        font-size: 11px;
+        text-transform: uppercase;
+        color: #94a3b8;
+        font-weight: 700;
+        letter-spacing: 1px;
+    }
+
+    .menu-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 25px;
+        color: #64748b;
+        text-decoration: none;
+        gap: 15px;
+        transition: 0.3s;
+        border-right: 3px solid transparent;
+    }
+
+    .menu-item i { width: 20px; font-size: 18px; }
+
+    .menu-item:hover, .menu-item.active {
+        background: #f0fdf4;
+        color: var(--primary);
+        border-right-color: var(--primary);
+    }
+
+    /* كرت المستخدم أسفل السايد بار */
+    .sidebar-bottom {
+        padding: 20px;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .user-card-sidebar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .user-avatar-sm {
+        width: 35px; height: 35px;
+        background: var(--primary);
+        color: white;
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: bold; font-size: 12px;
+    }
+
+    .user-info-sm .u-name { display: block; font-size: 13px; font-weight: 700; color: var(--dark); }
+    .user-info-sm .u-role { font-size: 11px; color: #94a3b8; }
+
+    .sidebar-logout-btn {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+        background: #fff1f2;
+        color: #e11d48;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-weight: 600;
+        transition: 0.3s;
+    }
+
+    .sidebar-logout-btn:hover { background: #ffe4e6; }
+
+    /* الحالة عند التصغير */
+    .sidebar-collapsed .sidebar { width: var(--sidebar-collapsed-width); }
+    .sidebar-collapsed .sidebar span, 
+    .sidebar-collapsed .menu-category,
+    .sidebar-collapsed .user-info-sm { display: none; }
+</style>
