@@ -1,0 +1,83 @@
+{% extends "layout/index.html" %}
+{% block title %}مواردي | الصفحة الرئيسية{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+  <div class="container">
+    <h1>نظام مواردي لإدارة طلبات العمالة</h1>
+    <p>
+      منصة موحدة لتنظيم طلبات الموظفين وربطها مباشرة مع شركات توريد العمالة
+      مع اعتماد واضح وسلس.
+    </p>
+    <a href="/accounts/login/" class="btn-main">ابدأ الآن</a>
+  </div>
+</section>
+
+<section id="features">
+  <div class="container">
+    <h2>مميزات النظام</h2>
+    <div class="grid">
+      <div class="card">طلبات ديناميكية</div>
+      <div class="card">اعتماد مركزي</div>
+      <div class="card">سهولة الاستخدام</div>
+      <div class="card">قابل للتوسع</div>
+    </div>
+  </div>
+</section>
+
+<section id="services">
+  <div class="container">
+    <h2>الخدمات</h2>
+    <ul>
+      <li>إدارة الإجازات</li>
+      <li>طلبات التأمين الطبي</li>
+      <li>خطابات الموارد البشرية</li>
+    </ul>
+  </div>
+</section>
+
+<section id="target">
+  <div class="container">
+    <h2>من يخدم النظام؟</h2>
+    <p>
+      شركات المقاولات، شركات التوريد، إدارات الموارد البشرية، المدراء التنفيذيون
+    </p>
+  </div>
+</section>
+
+<style>
+.hero {
+  padding: 90px 0;
+  text-align: center;
+  background: radial-gradient(circle at top,#dcfce7,#f8fafc);
+}
+.hero h1 {
+  font-size: 40px;
+}
+.btn-main {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 14px 30px;
+  background: linear-gradient(135deg,#22c55e,#065f46);
+  color: #fff;
+  border-radius: 999px;
+  text-decoration: none;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+  gap: 20px;
+}
+.card {
+  background: #fff;
+  padding: 25px;
+  border-radius: 18px;
+  box-shadow: 0 20px 40px rgba(0,0,0,.08);
+}
+section {
+  padding: 80px 0;
+}
+</style>
+
+{% endblock %}

@@ -1,0 +1,73 @@
+<h2 class="title">تسجيل الدخول</h2>
+<p class="subtitle">يرجى إدخال بيانات الدخول</p>
+
+{% if error %}
+<div class="error-box">{{ error }}</div>
+{% endif %}
+
+<form
+  hx-post="/accounts/login/"
+  hx-target="#login-box"
+  hx-swap="innerHTML"
+>
+
+  <div class="field">
+    <label>اسم المستخدم</label>
+    <input type="text" name="username" required>
+  </div>
+
+  <div class="field">
+    <label>كلمة المرور</label>
+    <input type="password" name="password" required>
+  </div>
+
+  <button type="submit" class="btn-login">
+    دخول
+  </button>
+</form>
+
+<style>
+.title {
+  margin: 0;
+  color: #065f46;
+  font-size: 26px;
+}
+.subtitle {
+  margin: 10px 0 25px;
+  color: #64748b;
+}
+.field {
+  margin-bottom: 18px;
+}
+.field label {
+  display: block;
+  margin-bottom: 6px;
+}
+.field input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+.field input:focus {
+  outline: none;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34,197,94,.2);
+}
+.btn-login {
+  width: 100%;
+  padding: 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg,#22c55e,#065f46);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+.error-box {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+</style>

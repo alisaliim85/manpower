@@ -1,0 +1,143 @@
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">مواردي</div>
+
+    <nav class="nav" id="navMenu">
+      <a href="/">الرئيسية</a>
+      <a href="#features">المميزات</a>
+      <a href="#services">الخدمات</a>
+      <a href="#target">المستفيدون</a>
+    </nav>
+
+    {% if request.user.is_authenticated %}
+      <form method="post" action="/accounts/logout/" class="logout-form">
+        {% csrf_token %}
+        <button type="submit" class="logout-btn">تسجيل الخروج</button>
+      </form>
+    {% else %}
+      <a href="/accounts/login/" class="btn-login">تسجيل الدخول</a>
+    {% endif %}
+
+    <div class="burger" id="burger">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  </div>
+</header>
+
+<style>
+/* Header */
+.header {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  background: #fff;
+  box-shadow: 0 6px 20px rgba(0,0,0,.06);
+  z-index: 100;
+}
+
+/* Inner wrapper */
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 72px;
+  padding: 0 24px; /* هامش يمين ويسار */
+}
+
+/* Logo */
+.logo {
+  font-size: 22px;
+  font-weight: bold;
+  color: #065f46;
+}
+
+/* Navigation */
+.nav a {
+  margin: 0 14px;
+  text-decoration: none;
+  color: #334155;
+  font-weight: 500;
+}
+
+/* Login */
+.btn-login {
+  padding: 8px 18px;
+  background: linear-gradient(135deg,#22c55e,#065f46);
+  color: #fff;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+/* Logout */
+.logout-form {
+  margin: 0;
+}
+
+.logout-btn {
+  background: none;
+  border: none;
+  color: #b91c1c;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 14px;
+}
+
+.logout-btn:hover {
+  text-decoration: underline;
+}
+
+/* Burger */
+.burger {
+  display: none;
+  flex-direction: column;
+  cursor: pointer;
+}
+
+.burger span {
+  width: 26px;
+  height: 3px;
+  background: #065f46;
+  margin: 4px 0;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .nav {
+    position: absolute;
+    top: 72px;
+    right: 0;
+    width: 100%;
+    background: #fff;
+    display: none;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0,0,0,.08);
+  }
+
+  .nav.active {
+    display: flex;
+  }
+
+  .nav a {
+    padding: 15px 24px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .burger {
+    display: flex;
+  }
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const burger = document.getElementById("burger");
+  const navMenu = document.getElementById("navMenu");
+
+  burger.addEventListener("click", function () {
+    navMenu.classList.toggle("active");
+  });
+});
+</script>

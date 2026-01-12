@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}مواردي{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: "Tajawal", system-ui;
+      background: #f8fafc;
+      color: #0f172a;
+    }
+    .container {
+      width: 90%;
+      max-width: 1200px;
+      margin: auto;
+    }
+    main {
+      min-height: calc(100vh - 160px);
+    }
+  </style>
+</head>
+
+<body>
+
+  {% include "layout/header.html" %}
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  {% include "layout/footer.html" %}
+
+</body>
+</html>
