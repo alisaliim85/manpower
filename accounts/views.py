@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from .decorators import company_access_required
+from vendors.models import Vendor
 
 
 def landing_page(request):
@@ -55,7 +56,18 @@ def redirect_by_company(user):
 
 @company_access_required('client')
 def client_dashboard(request):
-    return render(request, 'client/dashboard.html')
+    # 1. جلب جميع الموردين من قاعدة البيانات
+    vendors_list = Vendor.objects.all()
+    
+    # 2. تجهيز البيانات لإرسالها للقالب
+    context = {
+        'vendors': vendors_list,
+        'vendors_count': vendors_list.count(),
+        # يمكنك لاحقاً إضافة إحصائيات الطلبات هنا
+    }
+    
+    # 3. إرسال الـ context مع الـ render
+    return render(request, 'client/dashboard.html', context)
 
 
 @company_access_required('vendor')
