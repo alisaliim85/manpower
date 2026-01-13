@@ -3,6 +3,17 @@
 {% block title %} {{ title }} | مواردي {% endblock %}
 
 {% block content %}
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'client_dashboard' %}">الرئيسية</a></li>
+                        <li class="breadcrumb-item active">إضافة شركة توريد جديدة</li>
+                    </ol>
+                </nav>
+                
+            </div>
+
+
 <section class="container animate__animated animate__fadeIn">
     <div class="form-card">
         <div class="form-header">
@@ -59,6 +70,11 @@
         border-radius: 50%; display: flex; align-items: center; justify-content: center;
         margin: 0 auto 15px; font-size: 24px;
     }
+    /* Breadcrumbs */
+    .breadcrumb { background: none; padding: 0; margin: 0 0 5px 0; display: flex; list-style: none; gap: 8px; font-size: 13px; }
+    .breadcrumb-item a { color: var(--primary); text-decoration: none; }
+    .breadcrumb-item.active { color: #94a3b8; }
+    .breadcrumb-item + .breadcrumb-item::before { content: " / "; color: #cbd5e1; }
     .form-header h2 { margin: 0; color: var(--dark); }
     .form-header p { color: #64748b; font-size: 14px; }
 

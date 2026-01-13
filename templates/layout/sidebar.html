@@ -1,160 +1,220 @@
-<aside class="sidebar" id="sidebar">
-    <div class="sidebar-top">
-        <div class="sidebar-logo">
-            <i class="fas fa-layer-group"></i>
-            <span>مواردي</span>
-        </div>
-        
-        <nav class="sidebar-menu">
-            <span class="menu-category">القائمة الرئيسية</span>
-            <a href="/" class="menu-item active">
-                <i class="fas fa-chart-pie"></i>
-                <span>لوحة التحكم</span>
-            </a>
-            <a href="#" class="menu-item">
-                <i class="fas fa-file-invoice"></i>
-                <span>طلباتي</span>
-            </a>
-            <a href="#" class="menu-item">
-                <i class="fas fa-concierge-bell"></i>
-                <span>الخدمات</span>
-            </a>
+<button class="sidebar-toggle-btn open-btn" id="openSidebar" title="فتح القائمة">
+    <i class="fas fa-bars"></i>
+</button>
 
-            <span class="menu-category">النظام</span>
-            <a href="#" class="menu-item">
-                <i class="fas fa-users-cog"></i>
-                <span>المستفيدون</span>
-            </a>
-            <a href="#" class="menu-item">
-                <i class="fas fa-user-shield"></i>
-                <span>الإعدادات</span>
-            </a>
-        </nav>
+<aside class="sidebar-mini" id="sidebar">
+    <div class="sidebar-header">
+        <span class="sidebar-title">لوحة التحكم</span>
+        <button class="close-sidebar" id="closeSidebar" title="إغلاق القائمة">
+            <i class="fas fa-times"></i>
+        </button>
     </div>
-
-    <div class="sidebar-bottom">
-        <div class="user-card-sidebar">
-            <div class="user-avatar-sm">
-                {{ request.user.username|slice:":2"|upper }}
+    
+    <div class="sidebar-content">
+        <a href="/" class="sidebar-item active">
+            <div class="icon-box">
+                <i class="fas fa-home"></i>
             </div>
-            <div class="user-info-sm">
-                <span class="u-name">{{ request.user.username }}</span>
-                <span class="u-role">مسؤول النظام</span>
+            <span class="link-label">الرئيسية</span>
+        </a>
+    {%  if user.company and user.company.company_type == 'client'    %}
+        <a href="{% url 'vendors:vendor_list' %}" class="sidebar-item">
+            <div class="icon-box">
+                <i class="fas fa-building"></i>
             </div>
-        </div>
-        {% if request.user.is_authenticated %}
-        <form method="post" action="/accounts/logout/">
-            {% csrf_token %}
-            <button type="submit" class="sidebar-logout-btn">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>خروج</span>
-            </button>
-        </form>
+            <span class="link-label">الشركات</span>
+        </a>
         {% endif %}
+
+        <a href="{% url 'requests:list' %}" class="sidebar-item">
+            <div class="icon-box">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <span class="link-label">الطلبات</span>
+        </a>
+
+        <a href="#" class="sidebar-item">
+            <div class="icon-box">
+                <i class="fas fa-users"></i>
+            </div>
+            <span class="link-label">العمالة</span>
+        </a>
+
+        <a href="#" class="sidebar-item">
+            <div class="icon-box">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <span class="link-label">التقارير</span>
+        </a>
+        
+        <div class="sidebar-separator"></div>
+
+        <a href="#" class="sidebar-item">
+            <div class="icon-box">
+                <i class="fas fa-user-gear"></i>
+            </div>
+            <span class="link-label">الإعدادات</span>
+        </a>
     </div>
 </aside>
 
 <style>
-    .sidebar {
-        width: var(--sidebar-width);
+    /* 1. هيكل السايد بار العائم */
+    .sidebar-mini {
+        position: fixed;
+        right: 20px;       /* مسافة من اليمين لجعله عائماً */
+        top: 100px;        /* مسافة من الأعلى أسفل الهيدر */
+        bottom: 30px;      /* مسافة من الأسفل */
+        width: 180px;      /* عرض مناسب للأيقونة والنص */
         background: #ffffff;
-        height: 100vh;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.06);
         display: flex;
         flex-direction: column;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1100;
+        border-radius: 25px; /* زوايا دائرية كبيرة وجذابة */
+        border: 1px solid rgba(0,0,0,0.02);
+        overflow: hidden;
+    }
+
+    /* تأثير الإغلاق (يختفي لليمين) */
+    .sidebar-is-closed .sidebar-mini {
+        transform: translateX(calc(100% + 30px));
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    /* 2. الهيدر (العنوان + زر الإغلاق) */
+    .sidebar-header {
+        padding: 20px 15px;
+        display: flex;
         justify-content: space-between;
-        border-left: 1px solid #edf2f7;
-        transition: all var(--transition-speed) ease;
-        position: sticky;
-        top: 0;
-        right: 0;
-        z-index: 1000;
+        align-items: center;
+        border-bottom: 1px solid #f1f5f9;
     }
 
-    .sidebar-logo {
-        padding: 25px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        color: var(--primary);
-        font-size: 22px;
+    .sidebar-title {
+        font-size: 13px;
         font-weight: 800;
+        color: #1e293b;
+        letter-spacing: 0.5px;
     }
 
-    .menu-category {
-        display: block;
-        padding: 10px 25px;
-        font-size: 11px;
-        text-transform: uppercase;
-        color: #94a3b8;
-        font-weight: 700;
-        letter-spacing: 1px;
-    }
-
-    .menu-item {
-        display: flex;
-        align-items: center;
-        padding: 12px 25px;
-        color: #64748b;
-        text-decoration: none;
-        gap: 15px;
-        transition: 0.3s;
-        border-right: 3px solid transparent;
-    }
-
-    .menu-item i { width: 20px; font-size: 18px; }
-
-    .menu-item:hover, .menu-item.active {
-        background: #f0fdf4;
-        color: var(--primary);
-        border-right-color: var(--primary);
-    }
-
-    /* كرت المستخدم أسفل السايد بار */
-    .sidebar-bottom {
-        padding: 20px;
-        border-top: 1px solid #f1f5f9;
-    }
-
-    .user-card-sidebar {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 15px;
-    }
-
-    .user-avatar-sm {
-        width: 35px; height: 35px;
-        background: var(--primary);
-        color: white;
-        border-radius: 8px;
-        display: flex; align-items: center; justify-content: center;
-        font-weight: bold; font-size: 12px;
-    }
-
-    .user-info-sm .u-name { display: block; font-size: 13px; font-weight: 700; color: var(--dark); }
-    .user-info-sm .u-role { font-size: 11px; color: #94a3b8; }
-
-    .sidebar-logout-btn {
-        width: 100%;
-        padding: 10px;
-        border-radius: 8px;
+    .close-sidebar {
+        background: #f8fafc;
         border: none;
-        background: #fff1f2;
-        color: #e11d48;
+        color: #94a3b8;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
         cursor: pointer;
+        transition: 0.3s;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
-        font-weight: 600;
+    }
+
+    .close-sidebar:hover {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+
+    /* 3. تنسيق الروابط (أيقونة + نص) */
+    .sidebar-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 15px 12px;
+        gap: 10px;
+    }
+
+    .sidebar-item {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        color: #64748b;
+        text-decoration: none;
+        border-radius: 15px;
+        transition: all 0.3s ease;
+    }
+
+    /* صندوق الأيقونة */
+    .icon-box {
+        width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
         transition: 0.3s;
     }
 
-    .sidebar-logout-btn:hover { background: #ffe4e6; }
+    /* نص الرابط */
+    .link-label {
+        margin-right: 12px; /* مسافة من الأيقونة لجهة اليمين (RTL) */
+        font-size: 14px;
+        font-weight: 500;
+        white-space: nowrap;
+    }
 
-    /* الحالة عند التصغير */
-    .sidebar-collapsed .sidebar { width: var(--sidebar-collapsed-width); }
-    .sidebar-collapsed .sidebar span, 
-    .sidebar-collapsed .menu-category,
-    .sidebar-collapsed .user-info-sm { display: none; }
+    /* تأثيرات المرور (Hover) */
+    .sidebar-item:hover {
+        background: #f8fafc;
+        color: var(--primary);
+    }
+
+    .sidebar-item:hover .icon-box {
+        transform: scale(1.1);
+    }
+
+    /* العنصر النشط (Active) */
+    .sidebar-item.active {
+        background: var(--primary); /* يستخدم اللون الأخضر الخاص بك */
+        color: #ffffff;
+        box-shadow: 0 8px 15px rgba(16, 185, 129, 0.2);
+    }
+
+    .sidebar-separator {
+        height: 1px;
+        background: #f1f5f9;
+        margin: 10px 8px;
+    }
+
+    /* 4. زر الفتح العائم */
+    .sidebar-toggle-btn.open-btn {
+        position: fixed;
+        right: 30px;
+        top: 100px;
+        z-index: 1050;
+        background: var(--primary);
+        color: white;
+        border: none;
+        width: 48px;
+        height: 48px;
+        border-radius: 15px;
+        cursor: pointer;
+        box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+        display: none; /* مخفي افتراضياً */
+        align-items: center;
+        justify-content: center;
+        transition: 0.3s ease;
+    }
+
+    .sidebar-is-closed .sidebar-toggle-btn.open-btn {
+        display: flex;
+        animation: slideIn 0.4s ease forwards;
+    }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateX(30px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* دعم الشاشات الصغيرة */
+    @media (max-width: 768px) {
+        .sidebar-mini {
+            width: 150px;
+            right: 10px;
+        }
+    }
 </style>

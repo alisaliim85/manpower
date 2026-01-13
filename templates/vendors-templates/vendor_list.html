@@ -1,0 +1,194 @@
+{% extends "layout/index.html" %}
+
+{% block title %} {{ title }} | مواردي {% endblock %}
+
+{% block content %}
+<div class="vendor-list-container">
+    <div class="page-header-action animate__animated animate__fadeIn">
+        <div class="header-info">
+            <h1><i class="fas fa-building text-primary"></i> شركات التوريد</h1>
+            <p>إدارة بيانات ومتابعة أداء شركات التوريد المتعاقد معها</p>
+        </div>
+        <a href="{% url 'vendors:vendor_create' %}" class="btn-create">
+            <i class="fas fa-plus"></i> إضافة شركة جديدة
+        </a>
+    </div>
+
+    <div class="vendors-grid">
+        {% for vendor in vendors %}
+        <div class="vendor-card animate__animated animate__zoomIn">
+            <div class="vendor-status {% if vendor.is_active %}status-online{% else %}status-offline{% endif %}">
+                {% if vendor.is_active %}نشط{% else %}متوقف{% endif %}
+            </div>
+            
+            <div class="vendor-icon">
+                <i class="fas fa-industry"></i>
+            </div>
+            
+            <h3 class="vendor-name">{{ vendor.company.name|default:vendor.contact_name }}</h3>
+            
+            <div class="vendor-stats">
+                <div class="stat-item">
+                    <span class="stat-value">{{ vendor.workers_count }}</span>
+                    <span class="stat-label">عامل</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <span class="stat-value"><i class="fas fa-phone-alt"></i></span>
+                    <span class="stat-label">اتصال</span>
+                </div>
+            </div>
+
+            <div class="vendor-footer">
+                <a href="{% url 'vendors:vendor_detail' vendor.pk %}" class="btn-details">
+                    تفاصيل الشركة <i class="fas fa-chevron-left"></i>
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="no-data">
+            <img src="/static/images/empty.svg" alt="لا توجد بيانات" style="width: 150px; opacity: 0.5;">
+            <p>لا توجد شركات توريد مسجلة حالياً.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    /* التنسيقات الخاصة بصفحة الشركات */
+    .vendor-list-container {
+        padding: 20px;
+    }
+
+    .page-header-action {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .header-info h1 {
+        font-size: 24px;
+        font-weight: 800;
+        margin: 0;
+        color: #1e293b;
+    }
+
+    .header-info p {
+        color: #64748b;
+        margin: 5px 0 0 0;
+    }
+
+    .btn-create {
+        background: var(--primary);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 14px;
+        text-decoration: none;
+        font-weight: 700;
+        box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);
+        transition: 0.3s;
+    }
+
+    .btn-create:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 25px rgba(16, 185, 129, 0.3);
+    }
+
+    /* تصميم الكروت */
+    .vendors-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 25px;
+    }
+
+    .vendor-card {
+        background: white;
+        border-radius: 24px;
+        padding: 30px 20px;
+        text-align: center;
+        position: relative;
+        transition: 0.3s;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+        border: 1px solid #f1f5f9;
+    }
+
+    .vendor-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.06);
+    }
+
+    .vendor-status {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        padding: 5px 12px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 800;
+    }
+
+    .status-online { background: #dcfce7; color: #15803d; }
+    .status-offline { background: #fee2e2; color: #b91c1c; }
+
+    .vendor-icon {
+        width: 70px;
+        height: 70px;
+        background: #f8fafc;
+        color: var(--primary);
+        font-size: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        border-radius: 20px;
+    }
+
+    .vendor-name {
+        font-size: 18px;
+        color: #1e293b;
+        margin-bottom: 20px;
+    }
+
+    .vendor-stats {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        background: #f8fafc;
+        padding: 15px;
+        border-radius: 16px;
+        margin-bottom: 25px;
+    }
+
+    .stat-value {
+        display: block;
+        font-size: 18px;
+        font-weight: 800;
+        color: #1e293b;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #94a3b8;
+    }
+
+    .stat-divider {
+        width: 1px;
+        height: 30px;
+        background: #e2e8f0;
+    }
+
+    .btn-details {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 14px;
+        transition: 0.3s;
+    }
+
+    .btn-details:hover {
+        letter-spacing: 0.5px;
+    }
+</style>
+{% endblock %}

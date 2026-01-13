@@ -31,7 +31,18 @@
             max-width: 1200px;
             margin: auto;
         }
-
+        .has-sidebar main {
+            margin-right: 200px; /* نفس عرض السايد بار */
+            transition: padding-right 0.4s ease;
+        }
+        .sidebar-is-closed main {
+            margin-right: 0;
+        }
+        @media (max-width: 768px) {
+            .has-sidebar main {
+                margin-right: 0;
+            }
+        }
         main {
             min-height: calc(100vh - 160px);
             padding: 40px 0;
@@ -51,15 +62,37 @@
         .approved-light { background: #dcfce7; color: #15803d; }
     </style>
 </head>
-<body>
+<body class="{% if user.is_authenticated %}has-sidebar{% endif %}" id="bodyTag">
 
     {% include "layout/header.html" %}
+    {% if user.is_authenticated %}
+        {% include "layout/sidebar.html" %}
+    {% endif %}
 
     <main class="animate__animated animate__fadeIn">
-        {% block content %}{% endblock %}
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
     </main>
 
     {% include "layout/footer.html" %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('sidebar');
+            const bodyTag = document.getElementById('bodyTag');
+            const closeBtn = document.getElementById('closeSidebar');
+            const openBtn = document.getElementById('openSidebar');
 
+            if(closeBtn && openBtn) {
+                closeBtn.addEventListener('click', () => {
+                    bodyTag.classList.add('sidebar-is-closed');
+                });
+
+                openBtn.addEventListener('click', () => {
+                    bodyTag.classList.remove('sidebar-is-closed');
+                });
+            }
+        });
+    </script>
 </body>
 </html>

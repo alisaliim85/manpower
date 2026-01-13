@@ -2,9 +2,11 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
 from .models import Vendor
-from django.contrib.auth.mixins import LoginRequiredMixin # استيراد الميكسين الخاص بالكلاسات
+from django.contrib.auth.mixins import LoginRequiredMixin,UserPassesTestMixin # استيراد الميكسين الخاص بالكلاسات
 from django.urls import reverse_lazy
 from django.views.generic.edit import CreateView
+from django.views.generic import ListView
+from django.core.exceptions import PermissionDenied
 from accounts.models import Company
 
 # تأكد من استيراد موديل الطلبات إذا كان موجوداً في تطبيق requests
@@ -51,4 +53,33 @@ class VendorCreateView(LoginRequiredMixin, CreateView):
             company_type='vendor', 
             vendor_profile__isnull=True
         )
+        return context
+
+
+class VendorListView(LoginRequiredMixin,UserPassesTestMixin, ListView): # تصحيح الوراثة هنا
+    model = Vendor
+    template_name = 'vendors-templates/vendor_list.html'
+    context_object_name = 'vendors'
+    paginate_by = 10
+    ordering = ['-id']
+    # هذه الدالة هي المسؤولة عن اختبار صلاحية المستخدم
+# دالة التحقق من الصلاحية
+    def test_func(self):
+        user = self.request.user
+        # نتحقق: هل المستخدم مرتبط بشركة؟ وهل نوع هذه الشركة 'client'؟
+        return user.company and user.company.company_type == 'client'
+
+    # معالجة فشل التحقق (إظهار خطأ 403)
+    def handle_no_permission(self):
+        if self.request.user.is_authenticated:
+            raise PermissionDenied
+        return super().handle_no_permission()
+
+    def get_queryset(self):
+        # تحسين الأداء: جلب الشركات مع عدد العمال في استعلام واحد
+        return Vendor.objects.annotate(workers_count=Count('workers')).all()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = "قائمة شركات التوريد"
         return context

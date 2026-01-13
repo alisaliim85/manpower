@@ -3,6 +3,17 @@
 
 {% block content %}
 <section class="container py-5" dir="rtl">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'client_dashboard' %}">الرئيسية</a></li>
+                        <li class="breadcrumb-item active">طلب جديد</li>
+                    </ol>
+                </nav>
+                
+            </div>
+
+
   <!-- Header -->
   <div class="page-head mb-4">
     <div class="head-text">
@@ -275,6 +286,21 @@
 }
 .head-text h2{font-weight:800;color:var(--text)}
 .head-text p{color:var(--muted)}
+/* 1. زيادة الارتفاع المسموح للنموذج لتقليل الحاجة للتمرير الداخلي */
+.step-body.custom-scrollbar {
+    max-height: 65vh !important; /* يستخدم 65% من ارتفاع الشاشة بدلاً من رقم ثابت صغير */
+    overflow-y: auto;
+    padding-bottom: 80px; /* مساحة إضافية لمنع الـ Footer من تغطية آخر حقل */
+}
+
+/* 2. تحسين الـ Sticky Footer لضمان عدم تداخله */
+.sticky-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    background: white; /* تأكد أنه ليس شفافاً تماماً */
+    box-shadow: 0 -10px 20px rgba(0,0,0,0.05); /* ظل خفيف لتمييزه عن الحقول */
+}
 
 .wizard-progress{
   display:flex;
@@ -497,6 +523,11 @@
   background:#f8fafc;
   transition:.2s;
 }
+/* Breadcrumbs */
+    .breadcrumb { background: none; padding: 0; margin: 0 0 5px 0; display: flex; list-style: none; gap: 8px; font-size: 13px; }
+    .breadcrumb-item a { color: var(--primary); text-decoration: none; }
+    .breadcrumb-item.active { color: #94a3b8; }
+    .breadcrumb-item + .breadcrumb-item::before { content: " / "; color: #cbd5e1; }
 .field-input:focus{
   background:#fff;
   border-color:rgba(16,185,129,.6);
@@ -600,9 +631,7 @@ function showStep(step){
   qsa('.wizard-step').forEach(s => s.classList.remove('active'));
   qs('#step-'+step).classList.add('active');
   updateDots(step);
-  // Scroll to top of wizard (UX)
-  qs('#wizard-form').scrollIntoView({behavior:'smooth', block:'start'});
-}
+window.scrollTo({ top: 0, behavior: 'smooth' });}
 
 function updateDots(step){
   qsa('.step-dot').forEach((d, i) => {
