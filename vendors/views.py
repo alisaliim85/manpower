@@ -2,6 +2,11 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
 from .models import Vendor
+from django.contrib.auth.mixins import LoginRequiredMixin # استيراد الميكسين الخاص بالكلاسات
+from django.urls import reverse_lazy
+from django.views.generic.edit import CreateView
+from accounts.models import Company
+
 # تأكد من استيراد موديل الطلبات إذا كان موجوداً في تطبيق requests
 # from requests.models import Request 
 
@@ -32,3 +37,18 @@ def vendor_detail_view(request, pk):
     }
     
     return render(request, 'vendors-templates/vendor_detail.html', context)
+
+class VendorCreateView(LoginRequiredMixin, CreateView):
+    model = Vendor
+    fields = ['company', 'contact_name', 'contact_phone', 'is_active']
+    template_name = 'vendors-templates/vendor_create.html'
+    success_url = reverse_lazy('vendors:vendor_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = "إضافة شركة توريد جديدة"
+        context['available_companies'] = Company.objects.filter(
+            company_type='vendor', 
+            vendor_profile__isnull=True
+        )
+        return context

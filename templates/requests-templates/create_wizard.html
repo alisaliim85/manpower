@@ -1,0 +1,823 @@
+{% extends "layout/index.html" %}
+{% block title %}إنشاء طلب جديد | مواردي{% endblock %}
+
+{% block content %}
+<section class="container py-5" dir="rtl">
+  <!-- Header -->
+  <div class="page-head mb-4">
+    <div class="head-text">
+      <h2 class="mb-1">تقديم طلب جديد</h2>
+      <p class="mb-0">نظام ذكي لمعالجة الطلبات</p>
+    </div>
+
+    <div class="wizard-progress" aria-label="مؤشر التقدم">
+      <span class="step-dot active" data-s="1">1</span>
+      <span class="step-line"></span>
+      <span class="step-dot" data-s="2">2</span>
+      <span class="step-line"></span>
+      <span class="step-dot" data-s="3">3</span>
+      <span class="step-line"></span>
+      <span class="step-dot" data-s="4">4</span>
+    </div>
+  </div>
+
+  <form id="wizard-form" method="POST" class="wizard-container">
+    {% csrf_token %}
+
+    <!-- ===================== STEP 1: Worker ===================== -->
+    <div class="wizard-step active" id="step-1">
+      <div class="step-header">
+        <div class="step-title">
+          <h5 class="mb-1">اختيار الموظف</h5>
+          <p class="mb-0">ابحث ثم اختر الموظف صاحب الطلب</p>
+        </div>
+
+        <div class="search-wrap mt-3">
+          <i class="fas fa-search search-ico" aria-hidden="true"></i>
+          <input
+            type="text"
+            id="worker-search"
+            class="search-input"
+            placeholder="ابحث بالاسم أو رقم الإقامة أو المسمى الوظيفي..."
+            autocomplete="off"
+          />
+          <button type="button" class="search-clear" id="search-clear" aria-label="مسح البحث" title="مسح">
+            ×
+          </button>
+        </div>
+
+        <div class="search-meta mt-2">
+          <span class="meta-pill">
+            النتائج: <b id="results-count">0</b>
+          </span>
+          <span class="meta-hint">نصيحة: جرّب البحث برقم الإقامة لتصفية أسرع</span>
+        </div>
+      </div>
+
+      <div class="step-body custom-scrollbar" style="max-height:420px;">
+        <div id="workers-results" class="workers-grid">
+          {% for worker in workers %}
+          <label class="worker-item">
+            <input
+              type="radio"
+              name="worker"
+              value="{{ worker.id }}"
+              required
+              data-name="{{ worker.full_name }}"
+              data-id="{{ worker.iqama_number }}"
+              data-job="{{ worker.vendor }}"
+            />
+
+            <div class="worker-card">
+              <div class="worker-avatar">{{ worker.full_name|slice:":1" }}</div>
+
+              <div class="worker-info">
+                <div class="worker-name">{{ worker.full_name }}</div>
+                <div class="worker-sub">
+                  <span class="badge-soft">{{ worker.job_title }}</span>
+                  <span class="worker-id">رقم الإقامة: {{ worker.iqama_number }}</span>
+                </div>
+              </div>
+
+              <div class="worker-check" aria-hidden="true">
+                <i class="fas fa-check"></i>
+              </div>
+            </div>
+          </label>
+          {% endfor %}
+        </div>
+
+        <div id="no-results" class="empty-state d-none">
+          <div class="empty-ico"><i class="fas fa-user-slash"></i></div>
+          <h6 class="mb-1">لا توجد نتائج مطابقة</h6>
+          <p class="mb-0">جرّب كتابة جزء من الاسم أو رقم الإقامة</p>
+        </div>
+      </div>
+
+      <div class="step-footer sticky-footer">
+        <div class="footer-left">
+          <button type="button" class="btn brand-primary" onclick="nextStep(2)">
+            متابعة <i class="fas fa-arrow-left ms-2"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== STEP 2: Request Type ===================== -->
+    <div class="wizard-step" id="step-2">
+      <div class="step-header">
+        <div class="step-title">
+          <h5 class="mb-1">نوع الطلب</h5>
+          <p class="mb-0">اختر الخدمة المطلوبة للمتابعة</p>
+        </div>
+      </div>
+
+      <div class="step-body">
+        <div class="row g-3">
+          {% for type in request_types %}
+          <div class="col-12 col-md-6">
+            <label class="service-tile">
+              <input type="radio" name="request_type" value="{{ type.id }}" required />
+              <div class="tile">
+                <div class="tile-ico"><i class="fas fa-file-alt"></i></div>
+                <div class="tile-text">
+                  <h6 class="mb-1">{{ type.name }}</h6>
+                  <span>اضغط للاختيار</span>
+                </div>
+                <div class="tile-check"><i class="fas fa-check"></i></div>
+              </div>
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="step-footer sticky-footer between">
+        <button type="button" class="btn brand-outline" onclick="prevStep(1)">
+          <i class="fas fa-arrow-right ms-2"></i> رجوع
+        </button>
+
+        <button type="button" class="btn brand-primary px-5" id="btn-step2" onclick="handleStep2(event)">
+          متابعة للتفاصيل <i class="fas fa-arrow-left ms-2"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ===================== STEP 3: Details ===================== -->
+    <div class="wizard-step" id="step-3">
+      <div class="step-header">
+        <div class="step-title">
+          <h5 class="mb-1">تفاصيل الطلب</h5>
+          <p class="mb-0">أكمل البيانات المطلوبة حسب نوع الخدمة</p>
+        </div>
+      </div>
+
+      <div class="step-body custom-scrollbar" style="max-height:420px;">
+        <div class="form-card">
+          <div class="form-section">
+            <h6 class="section-title">معلومات أساسية</h6>
+
+            <div class="field">
+              <label class="field-label">عنوان الطلب <span class="req">*</span></label>
+              <input type="text" name="title" id="id_title" class="field-input" placeholder="مثال: طلب إجازة / إضافة تأمين..." required />
+              <div class="field-hint">اكتب عنوانًا واضحًا ومختصرًا.</div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h6 class="section-title">بيانات إضافية حسب نوع الطلب</h6>
+            <div id="dynamic-fields-area" class="dynamic-area">
+              <div class="muted-box">
+                اختر نوع الطلب أولاً ليتم تحميل الحقول هنا.
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h6 class="section-title">ملاحظات</h6>
+            <div class="field">
+              <label class="field-label">ملاحظات إضافية</label>
+              <textarea name="notes" class="field-input" rows="4" placeholder="أي تفاصيل إضافية تساعد في معالجة الطلب..."></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-footer sticky-footer between">
+        <button type="button" class="btn brand-outline" onclick="prevStep(2)">
+          <i class="fas fa-arrow-right ms-2"></i> رجوع
+        </button>
+
+        <button type="button" class="btn brand-primary px-5" onclick="goReview()">
+          مراجعة الطلب <i class="fas fa-clipboard-check ms-2"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ===================== STEP 4: Review (NEW) ===================== -->
+    <div class="wizard-step" id="step-4">
+      <div class="step-header">
+        <div class="step-title">
+          <h5 class="mb-1">مراجعة الطلب قبل الإرسال</h5>
+          <p class="mb-0">تأكد من صحة جميع البيانات ثم قم بالإرسال</p>
+        </div>
+      </div>
+
+      <div class="step-body custom-scrollbar" style="max-height:420px;">
+        <div class="review-card">
+          <div class="review-row">
+            <div class="review-label">الموظف</div>
+            <div class="review-value" id="rv-worker">—</div>
+          </div>
+
+          <div class="review-row">
+            <div class="review-label">نوع الطلب</div>
+            <div class="review-value" id="rv-type">—</div>
+          </div>
+
+          <div class="review-row">
+            <div class="review-label">عنوان الطلب</div>
+            <div class="review-value" id="rv-title">—</div>
+          </div>
+
+          <div class="review-block">
+            <div class="review-label mb-2">الحقول الإضافية</div>
+            <div id="rv-fields" class="review-fields">
+              <div class="muted-box">لا توجد حقول إضافية.</div>
+            </div>
+          </div>
+
+          <div class="review-row">
+            <div class="review-label">ملاحظات</div>
+            <div class="review-value" id="rv-notes">—</div>
+          </div>
+
+          <div class="review-note">
+            بالضغط على “تأكيد وإرسال” سيتم رفع الطلب للمعالجة.
+          </div>
+        </div>
+      </div>
+
+      <div class="step-footer sticky-footer between">
+        <button type="button" class="btn brand-outline" onclick="prevStep(3)">
+          <i class="fas fa-arrow-right ms-2"></i> رجوع للتعديل
+        </button>
+
+        <button type="submit" class="btn brand-success px-5">
+          تأكيد وإرسال <i class="fas fa-paper-plane ms-2"></i>
+        </button>
+      </div>
+    </div>
+
+  </form>
+</section>
+
+<!-- ===================== CSS ===================== -->
+<style>
+:root{
+  --brand:#10b981;
+  --brand2:#34d399;
+  --brand-dark:#059669;
+  --bg:#f8fafc;
+  --text:#0f172a;
+  --muted:#64748b;
+  --border:#e5e7eb;
+  --card:#ffffff;
+  --shadow:0 18px 40px rgba(0,0,0,.07);
+  --radius:18px;
+}
+
+.page-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:16px;
+}
+.head-text h2{font-weight:800;color:var(--text)}
+.head-text p{color:var(--muted)}
+
+.wizard-progress{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  direction:rtl;
+}
+.step-dot{
+  width:34px;height:34px;border-radius:50%;
+  display:grid;place-items:center;
+  background:#e5e7eb;color:#64748b;
+  font-weight:800;
+  transition:.25s;
+}
+.step-dot.active{
+  background:linear-gradient(135deg,var(--brand),var(--brand2));
+  color:#fff;
+  transform:scale(1.04);
+}
+.step-line{width:44px;height:3px;background:#e5e7eb;border-radius:99px}
+
+.wizard-container{
+  background:var(--card);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+  border:1px solid rgba(229,231,235,.6);
+}
+
+.wizard-step{display:none;animation:slideFade .45s cubic-bezier(.4,0,.2,1)}
+.wizard-step.active{display:block}
+@keyframes slideFade{
+  from{opacity:0;transform:translateX(-18px)}
+  to{opacity:1;transform:translateX(0)}
+}
+
+.step-header{padding:22px 22px 18px;border-bottom:1px solid var(--border)}
+.step-title h5{font-weight:800;color:var(--text)}
+.step-title p{color:var(--muted);font-size:.9rem}
+
+.step-body{padding:18px 22px;background:linear-gradient(180deg,#ffffff,#fbfdff)}
+.custom-scrollbar::-webkit-scrollbar{width:8px}
+.custom-scrollbar::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
+.custom-scrollbar::-webkit-scrollbar-track{background:transparent}
+
+.sticky-footer{
+  position:sticky;
+  bottom:0;
+  background:rgba(255,255,255,.92);
+  backdrop-filter: blur(10px);
+  border-top:1px solid var(--border);
+  padding:14px 18px;
+}
+.sticky-footer.between{display:flex;justify-content:space-between;align-items:center;gap:12px}
+
+/* Search */
+.search-wrap{position:relative;width:90%}
+.search-input{
+  width:100%;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px 44px 12px 44px;
+  outline:none;
+  transition:.2s;
+  background:#f1f5f9;
+}
+.search-input:focus{
+  background:#fff;
+  border-color:rgba(16,185,129,.6);
+  box-shadow:0 0 0 4px rgba(16,185,129,.13);
+}
+.search-ico{
+  position:absolute;
+  right:14px;
+  top:50%;
+  transform:translateY(-50%);
+  color:#334155;
+  opacity:.85;
+}
+.search-clear{
+  position:absolute;
+  left:5px;
+  top:50%;
+  transform:translateY(-50%);
+  width:30px;height:30px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:#fff;
+  color:#334155;
+  display:none;
+}
+.search-meta{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.meta-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 10px;
+  border-radius:999px;
+  background:#eef2ff;
+  border:1px solid rgba(99,102,241,.15);
+  color:#1e293b;
+  font-size:.85rem;
+}
+.meta-hint{color:var(--muted);font-size:.85rem}
+
+/* Workers */
+.workers-grid{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:768px){.workers-grid{grid-template-columns:1fr 1fr}}
+.worker-item input{display:none}
+.worker-card{
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:14px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  cursor:pointer;
+  transition:.22s;
+  background:#fff;
+}
+.worker-card:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(0,0,0,.06)}
+.worker-avatar{
+  width:46px;height:46px;border-radius:50%;
+  display:grid;place-items:center;
+  background:#e2e8f0;
+  font-weight:900;color:#0f172a;
+  flex:0 0 auto;
+}
+.worker-info{flex:1 1 auto}
+.worker-name{font-weight:900;color:#0f172a}
+.worker-sub{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:4px}
+.badge-soft{
+  padding:4px 10px;border-radius:999px;
+  background:#ecfdf5;border:1px solid rgba(16,185,129,.25);
+  color:#065f46;font-size:.82rem;
+}
+.worker-id{color:#64748b;font-size:.85rem}
+.worker-check{
+  width:28px;height:28px;border-radius:10px;
+  display:grid;place-items:center;
+  background:#f1f5f9;border:1px solid var(--border);
+  color:#94a3b8;
+}
+.worker-item input:checked + .worker-card{
+  border-color:rgba(16,185,129,.55);
+  box-shadow:0 0 0 5px rgba(16,185,129,.12);
+  background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(52,211,153,.08));
+}
+.worker-item input:checked + .worker-card .worker-check{
+  background:linear-gradient(135deg,var(--brand),var(--brand2));
+  color:#fff;border-color:transparent;
+}
+
+/* Service tiles */
+.service-tile input{display:none}
+.tile{
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  background:#fff;
+  cursor:pointer;
+  transition:.25s;
+}
+.tile:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(0,0,0,.06)}
+.tile-ico{
+  width:44px;height:44px;border-radius:14px;
+  display:grid;place-items:center;
+  background:#ecfdf5;border:1px solid rgba(16,185,129,.25);
+  color:#047857;font-size:18px;
+}
+.tile-text h6{font-weight:900;color:#0f172a}
+.tile-text span{color:#64748b;font-size:.85rem}
+.tile-check{
+  width:28px;height:28px;border-radius:10px;
+  display:grid;place-items:center;
+  background:#f1f5f9;border:1px solid var(--border);
+  color:#94a3b8;
+}
+.service-tile input:checked + .tile{
+  border-color:rgba(16,185,129,.6);
+  box-shadow:0 0 0 5px rgba(16,185,129,.12);
+}
+.service-tile input:checked + .tile .tile-check{
+  background:linear-gradient(135deg,var(--brand),var(--brand2));
+  color:#fff;border-color:transparent;
+}
+
+/* Form */
+.form-card{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:18px;
+}
+.form-section + .form-section{margin-top:18px;padding-top:18px;border-top:1px dashed #e2e8f0}
+.section-title{
+  font-weight:900;
+  margin:0 0 12px;
+  color:#0f172a;
+}
+.field{margin-bottom:14px}
+.field-label{font-weight:800;color:#0f172a;margin-bottom:6px;display:block}
+.req{color:#ef4444}
+.field-input{
+  width:100%;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px 12px;
+  outline:none;
+  background:#f8fafc;
+  transition:.2s;
+}
+.field-input:focus{
+  background:#fff;
+  border-color:rgba(16,185,129,.6);
+  box-shadow:0 0 0 4px rgba(16,185,129,.13);
+}
+.field-hint{color:#64748b;font-size:.82rem;margin-top:6px}
+
+.muted-box{
+  padding:12px 14px;
+  border-radius:14px;
+  background:#f1f5f9;
+  border:1px solid var(--border);
+  color:#64748b;
+}
+.dynamic-field{animation:fadeUp .35s ease both}
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* Review */
+.review-card{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:18px;
+}
+.review-row{
+  display:grid;
+  grid-template-columns:140px 1fr;
+  gap:12px;
+  padding:12px 0;
+  border-bottom:1px solid #eef2f7;
+}
+.review-row:last-child{border-bottom:none}
+.review-label{color:#64748b;font-weight:900}
+.review-value{color:#0f172a;font-weight:700}
+.review-block{padding:12px 0;border-bottom:1px solid #eef2f7}
+.review-fields{display:flex;flex-direction:column;gap:10px}
+.review-pill{
+  display:flex;justify-content:space-between;gap:10px;
+  padding:10px 12px;border-radius:14px;
+  background:#f8fafc;border:1px solid var(--border);
+}
+.review-pill b{color:#0f172a}
+.review-pill span{color:#475569}
+.review-note{
+  margin-top:14px;
+  padding:12px 14px;
+  border-radius:14px;
+  background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(52,211,153,.08));
+  border:1px solid rgba(16,185,129,.25);
+  color:#065f46;
+  font-weight:800;
+}
+
+/* Buttons */
+.btn{border-radius:14px;font-weight:900;padding:10px 14px}
+.brand-primary{
+  background:linear-gradient(135deg,var(--brand),var(--brand2));
+  border:none;
+  color:#fff;
+  box-shadow:0 10px 20px rgba(16,185,129,.18);
+  transition:.2s;
+}
+.brand-primary:hover{transform:translateY(-1px);filter:saturate(1.05)}
+.brand-outline{
+  background:#fff;border:1px solid #cbd5e1;color:#334155;
+  transition:.2s;
+}
+.brand-outline:hover{background:#f1f5f9}
+.brand-success{
+  background:linear-gradient(135deg,#16a34a,#22c55e);
+  border:none;color:#fff;
+  box-shadow:0 10px 20px rgba(34,197,94,.18);
+  transition:.2s;
+}
+.brand-success:hover{transform:translateY(-1px)}
+.empty-state{
+  text-align:center;
+  padding:40px 10px;
+  color:#64748b;
+}
+.empty-ico{
+  width:70px;height:70px;border-radius:50%;
+  display:grid;place-items:center;
+  margin:0 auto 10px;
+  background:#f1f5f9;border:1px solid var(--border);
+  font-size:26px;color:#94a3b8;
+}
+.d-none{display:none !important}
+</style>
+
+<!-- ===================== JS ===================== -->
+<script>
+/* ---------- Helpers ---------- */
+function qs(sel, root=document){ return root.querySelector(sel); }
+function qsa(sel, root=document){ return Array.from(root.querySelectorAll(sel)); }
+
+function showStep(step){
+  qsa('.wizard-step').forEach(s => s.classList.remove('active'));
+  qs('#step-'+step).classList.add('active');
+  updateDots(step);
+  // Scroll to top of wizard (UX)
+  qs('#wizard-form').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function updateDots(step){
+  qsa('.step-dot').forEach((d, i) => {
+    d.classList.toggle('active', (i+1) <= step);
+  });
+}
+
+function nextStep(step){
+  if(step === 2){
+    if(!qs('input[name="worker"]:checked')){
+      alert('يرجى اختيار موظف للمتابعة');
+      return;
+    }
+  }
+  showStep(step);
+}
+
+function prevStep(step){ showStep(step); }
+
+/* ---------- Step 1: Search (fixed) ---------- */
+(function initWorkerSearch(){
+  const input = qs('#worker-search');
+  const clearBtn = qs('#search-clear');
+  const noResults = qs('#no-results');
+  const countEl = qs('#results-count');
+  const items = qsa('.worker-item');
+
+  function normalize(v){ return (v || '').toString().toLowerCase().trim(); }
+
+  function apply(term){
+    const t = normalize(term);
+    let visible = 0;
+
+    items.forEach(item => {
+      const radio = qs('input[type="radio"]', item);
+      const s = normalize(`${radio.dataset.name} ${radio.dataset.id} ${radio.dataset.job}`);
+      const ok = !t || s.includes(t);
+      item.style.display = ok ? '' : 'none';
+      if(ok) visible++;
+    });
+
+    countEl.textContent = visible;
+    noResults.classList.toggle('d-none', visible !== 0);
+
+    clearBtn.style.display = (t.length > 0) ? 'inline-grid' : 'none';
+  }
+
+  // Debounce
+  let timer = null;
+  input.addEventListener('input', (e) => {
+    window.clearTimeout(timer);
+    timer = window.setTimeout(() => apply(e.target.value), 150);
+  });
+
+  clearBtn.addEventListener('click', () => {
+    input.value = '';
+    input.focus();
+    apply('');
+  });
+
+  // initial count
+  apply('');
+})();
+
+/* ---------- Step 2: Load fields ---------- */
+async function handleStep2(ev){
+  const btn = ev?.currentTarget || qs('#btn-step2');
+  const selectedType = qs('input[name="request_type"]:checked');
+
+  if(!selectedType){
+    alert('يرجى اختيار نوع الطلب');
+    return;
+  }
+
+  const original = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحميل...';
+  btn.disabled = true;
+
+  try{
+    await loadFields(selectedType.value);
+    showStep(3);
+  }catch(err){
+    console.error(err);
+    alert('حدث خطأ أثناء تحميل الحقول');
+  }finally{
+    btn.innerHTML = original;
+    btn.disabled = false;
+  }
+}
+
+async function loadFields(typeId){
+  const container = qs('#dynamic-fields-area');
+  container.innerHTML = '<div class="muted-box">جاري تحميل الحقول...</div>';
+
+  const res = await fetch(`/requests/api/get-fields/${typeId}/`, { headers: { 'Accept': 'application/json' } });
+  if(!res.ok) throw new Error('Failed to fetch fields');
+  const fields = await res.json();
+
+  container.innerHTML = '';
+  if(!Array.isArray(fields) || fields.length === 0){
+    container.innerHTML = '<div class="muted-box">لا توجد حقول إضافية لهذا النوع.</div>';
+    return;
+  }
+
+  fields.forEach((f, idx) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'field dynamic-field';
+    wrap.style.animationDelay = `${idx * 0.05}s`;
+
+    const name = `field_${f.id}`;
+    const isReq = !!f.is_required;
+
+    // NOTE: we keep "required" attribute consistent
+    let inputHTML = '';
+    if(f.field_type === 'text'){
+      inputHTML = `<input type="text" class="field-input" name="${name}" ${isReq ? 'required' : ''} placeholder="أدخل ${escapeHtml(f.label)}">`;
+    }else if(f.field_type === 'number'){
+      inputHTML = `<input type="number" class="field-input" name="${name}" ${isReq ? 'required' : ''} placeholder="أدخل رقم">`;
+    }else if(f.field_type === 'date'){
+      inputHTML = `<input type="date" class="field-input" name="${name}" ${isReq ? 'required' : ''}>`;
+    }else if(f.field_type === 'bool'){
+      inputHTML = `
+        <select class="field-input" name="${name}" ${isReq ? 'required' : ''}>
+          <option value="True">نعم</option>
+          <option value="False">لا</option>
+        </select>`;
+    }else{
+      inputHTML = `<input type="text" class="field-input" name="${name}" ${isReq ? 'required' : ''}>`;
+    }
+
+    wrap.innerHTML = `
+      <label class="field-label">${escapeHtml(f.label)} ${isReq ? '<span class="req">*</span>' : ''}</label>
+      ${inputHTML}
+    `;
+    container.appendChild(wrap);
+  });
+}
+
+/* ---------- Step 3 -> Step 4 Review ---------- */
+function goReview(){
+  // validate Step 3 required fields
+  const form = qs('#wizard-form');
+  // Use HTML5 validation without submitting
+  if(!form.checkValidity()){
+    form.reportValidity();
+    return;
+  }
+
+  fillReview();
+  showStep(4);
+}
+
+function fillReview(){
+  // Worker
+  const w = qs('input[name="worker"]:checked');
+  const wName = w?.dataset?.name || '—';
+  const wId = w?.dataset?.id || '—';
+  const wJob = w?.dataset?.job || '—';
+  qs('#rv-worker').textContent = `${wName} — (${wJob}) — رقم الإقامة: ${wId}`;
+
+  // Type
+  const typeRadio = qs('input[name="request_type"]:checked');
+  let typeName = '—';
+  if(typeRadio){
+    // Get visible title from tile
+    const tile = typeRadio.closest('.service-tile');
+    typeName = qs('h6', tile)?.textContent?.trim() || '—';
+  }
+  qs('#rv-type').textContent = typeName;
+
+  // Title
+  qs('#rv-title').textContent = (qs('#id_title')?.value || '—').trim();
+
+  // Notes
+  const notes = (qs('textarea[name="notes"]')?.value || '').trim();
+  qs('#rv-notes').textContent = notes ? notes : '—';
+
+  // Dynamic Fields
+  const rvFields = qs('#rv-fields');
+  rvFields.innerHTML = '';
+
+  const dynamicInputs = qsa('#dynamic-fields-area input, #dynamic-fields-area select, #dynamic-fields-area textarea')
+    .filter(el => el.name && el.name.startsWith('field_'));
+
+  if(dynamicInputs.length === 0){
+    rvFields.innerHTML = '<div class="muted-box">لا توجد حقول إضافية.</div>';
+    return;
+  }
+
+  dynamicInputs.forEach(el => {
+    // label text
+    const label = el.closest('.field')?.querySelector('.field-label')?.textContent?.replace('*','')?.trim() || el.name;
+
+    let val = '';
+    if(el.tagName.toLowerCase() === 'select'){
+      val = el.value === 'True' ? 'نعم' : (el.value === 'False' ? 'لا' : el.value);
+    }else{
+      val = (el.value || '').trim();
+    }
+
+    const pill = document.createElement('div');
+    pill.className = 'review-pill';
+    pill.innerHTML = `<b>${escapeHtml(label)}</b><span>${escapeHtml(val || '—')}</span>`;
+    rvFields.appendChild(pill);
+  });
+}
+
+/* ---------- Security helper (escape HTML) ---------- */
+function escapeHtml(str){
+  return (str || '').toString()
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'","&#039;");
+}
+</script>
+{% endblock %}

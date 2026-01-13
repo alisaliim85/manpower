@@ -1,0 +1,180 @@
+{% extends "layout/index.html" %}
+{% block title %}سجل الطلبات | مواردي{% endblock %}
+
+{% block content %}
+<section class="dashboard-wrapper animate__animated animate__fadeIn">
+    
+    <div class="db-header mb-5">
+        <div class="welcome-text">
+            <div class="user-avatar bg-primary">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <div>
+                <h1 class="fw-bold">سجل الطلبات</h1>
+                <p>إدارة ومتابعة كافة الطلبات المقدمة في النظام لشركة <span class="company-tag">{{ request.user.company.name }}</span></p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'requests:create_wizard' %}" class="btn-action pulse-animation">
+                <i class="fas fa-plus-circle"></i> إنشاء طلب جديد
+            </a>
+        </div>
+    </div>
+
+    <div class="stats-grid mb-5">
+        <div class="stat-item animate__animated animate__fadeInUp" style="animation-delay: 0.1s;">
+            <div class="stat-icon blue"><i class="fas fa-list-ul"></i></div>
+            <div class="stat-info">
+                <span class="label">إجمالي الطلبات</span>
+                <span class="count">{{ total_count|default:"12" }}</span>
+            </div>
+            <div class="stat-progress"><div class="bar" style="width: 100%; background: #3b82f6;"></div></div>
+        </div>
+
+        <div class="stat-item animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+            <div class="stat-icon orange"><i class="fas fa-hourglass-half fa-spin"></i></div>
+            <div class="stat-info">
+                <span class="label">قيد المعالجة</span>
+                <span class="count text-warning">{{ pending_count|default:"5" }}</span>
+            </div>
+            <div class="stat-progress"><div class="bar" style="width: 40%; background: #ea580c;"></div></div>
+        </div>
+
+        <div class="stat-item animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
+            <div class="stat-icon green"><i class="fas fa-check-double"></i></div>
+            <div class="stat-info">
+                <span class="label">طلبات مكتملة</span>
+                <span class="count text-success">{{ approved_count|default:"7" }}</span>
+            </div>
+            <div class="stat-progress"><div class="bar" style="width: 60%; background: #16a34a;"></div></div>
+        </div>
+    </div>
+
+    <div class="data-card animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
+        <div class="card-header d-flex justify-content-between align-items-center mb-4">
+            <h3 class="m-0"><i class="fas fa-search me-2"></i> تصفية وقائمة الطلبات</h3>
+            <div class="search-box">
+                <input type="text" class="form-control form-control-sm border-0 bg-light" placeholder="بحث سريع...">
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="modern-table w-100">
+                <thead>
+                    <tr>
+                        <th>رقم الطلب</th>
+                        <th>الموظف</th>
+                        <th>نوع الإجراء</th>
+                        <th>التاريخ</th>
+                        <th>الحالة</th>
+                        <th class="text-center">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in requests %}
+                    <tr>
+                        <td class="id-cell">#{{ req.id }}</td>
+                        <td class="fw-bold text-dark">{{ req.worker.name }}</td>
+                        <td class="type-cell"><i class="fas fa-file-alt"></i> {{ req.request_type.name }}</td>
+                        <td class="date-cell">{{ req.created_at|date:"Y-m-d" }}</td>
+                        <td>
+                            {% if req.status == 'approved' %}
+                                <span class="badge approved-light"><i class="fas fa-check-circle"></i> مكتمل</span>
+                            {% elif req.status == 'pending' %}
+                                <span class="badge pending-light"><i class="fas fa-clock"></i> معلق</span>
+                            {% else %}
+                                <span class="badge bg-danger-subtle text-danger px-2"><i class="fas fa-times-circle"></i> مرفوض</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <button class="btn-table" title="عرض"><i class="fas fa-eye"></i></button>
+                            <button class="btn-table text-secondary" title="طباعة"><i class="fas fa-print"></i></button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td class="id-cell">#1023</td>
+                        <td class="fw-bold">أحمد محمد</td>
+                        <td class="type-cell"><i class="fas fa-calendar-alt"></i> إجازة سنوية</td>
+                        <td class="date-cell">2026-01-12</td>
+                        <td><span class="badge pending-light"><i class="fas fa-clock"></i> قيد المعالجة</span></td>
+                        <td class="text-center"><button class="btn-table"><i class="fas fa-eye"></i></button></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* دمج التنسيقات الخاصة بك مع تحسينات إضافية */
+    .dashboard-wrapper { 
+        padding: 20px 0;
+        max-width: 1200px; margin: auto;
+    }
+    @media (max-width: 768px) {
+    .dashboard-wrapper {
+        padding: 15px;
+        max-width: 100%;
+    }
+}
+
+    /* الهيدر */
+    .db-header { display: flex; justify-content: space-between; align-items: center; }
+    .welcome-text { display: flex; align-items: center; gap: 20px; }
+    .user-avatar {
+        width: 55px; height: 55px;
+        border-radius: 15px; display: flex; align-items: center; justify-content: center;
+        font-size: 22px; color: white; box-shadow: 0 8px 15px rgba(16, 185, 129, 0.2);
+    }
+    .company-tag { color: #10b981; font-weight: bold; }
+
+    /* أزرار الأكشن */
+    .btn-action {
+        background: #1e293b; color: white; padding: 12px 25px; border-radius: 12px;
+        text-decoration: none; font-weight: bold; display: flex; align-items: center; gap: 10px; transition: 0.3s;
+    }
+    .btn-action:hover { background: #10b981; transform: translateY(-3px); color: white; }
+
+    /* شبكة الإحصائيات المحدثة */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
+    .stat-item { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.02); }
+    .stat-icon { width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
+    .blue { background: #eff6ff; color: #3b82f6; }
+    .orange { background: #fff7ed; color: #ea580c; }
+    .green { background: #f0fdf4; color: #16a34a; }
+    
+    .stat-info .label { display: block; color: #64748b; font-size: 13px; }
+    .stat-info .count { font-size: 26px; font-weight: 800; }
+    .stat-progress { height: 6px; background: #f1f5f9; border-radius: 10px; margin-top: 15px; overflow: hidden; }
+    .stat-progress .bar { height: 100%; }
+
+    /* الجداول Modern Style */
+    .data-card { background: white; border-radius: 24px; padding: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.02); }
+    .modern-table { border-collapse: separate; border-spacing: 0 10px; }
+    .modern-table th { padding: 15px; color: #94a3b8; font-size: 13px; border: none; }
+    .modern-table td { padding: 18px 15px; background: #f8fafc; border: none; }
+    .modern-table tr td:first-child { border-radius: 0 15px 15px 0; }
+    .modern-table tr td:last-child { border-radius: 15px 0 0 15px; }
+    
+    .id-cell { font-weight: 800; color: #3b82f6; }
+    .type-cell i { margin-left: 8px; color: #94a3b8; }
+    
+    /* البادجات */
+    .badge { padding: 8px 15px; border-radius: 10px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+    .pending-light { background: #fff7ed; color: #c2410c; }
+    .approved-light { background: #f0fdf4; color: #15803d; }
+
+    /* حركات */
+    .pulse-animation { animation: pulse 2s infinite; }
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+        70% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    
+    .btn-table { background: white; border: 1px solid #e2e8f0; width: 35px; height: 35px; border-radius: 10px; transition: 0.3s; margin: 0 2px; }
+    .btn-table:hover { background: #10b981; color: white; border-color: #10b981; }
+</style>
+{% endblock %}
