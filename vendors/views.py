@@ -1,13 +1,14 @@
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
-from .models import Vendor
+from .models import Vendor, Worker
 from django.contrib.auth.mixins import LoginRequiredMixin,UserPassesTestMixin # استيراد الميكسين الخاص بالكلاسات
 from django.urls import reverse_lazy
 from django.views.generic.edit import CreateView
-from django.views.generic import ListView
+from django.views.generic import ListView, DetailView
 from django.core.exceptions import PermissionDenied
 from accounts.models import Company
+
 
 # تأكد من استيراد موديل الطلبات إذا كان موجوداً في تطبيق requests
 # from requests.models import Request 
@@ -83,3 +84,69 @@ class VendorListView(LoginRequiredMixin,UserPassesTestMixin, ListView): # تصح
         context = super().get_context_data(**kwargs)
         context['title'] = "قائمة شركات التوريد"
         return context
+
+class WorkerListView(LoginRequiredMixin, ListView):
+    model = Worker
+    template_name = 'vendors-templates/worker_list.html'
+    context_object_name = 'workers'
+    paginate_by = 10  # عدد العمال في كل صفحة
+
+    def get_queryset(self):
+        user = self.request.user
+        # الترتيب الافتراضي: الأحدث إضافة
+        qs = Worker.objects.select_related('vendor__company').all().order_by('-created_at')
+
+        # 1. فلترة حسب نوع المستخدم
+        if user.company.company_type == 'vendor':
+            # المورد يرى عماله فقط
+            qs = qs.filter(vendor__company=user.company)
+        # العميل (Client) يرى الجميع حالياً (يمكن تخصيصها ليرى المتعاقد معهم فقط)
+
+        # 2. البحث النصي (الاسم، رقم الإقامة، المسمى الوظيفي)
+        query = self.request.GET.get('q')
+        if query:
+            qs = qs.filter(
+                Q(full_name__icontains=query) |
+                Q(iqama_number__icontains=query) |
+                Q(job_title__icontains=query)
+            )
+
+        # 3. فلترة الحالة (نشط، إجازة، خروج...)
+        status_filter = self.request.GET.get('status')
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # حساب الإحصائيات للكروت العلوية (بناءً على العمال المتاحين للمستخدم)
+        user = self.request.user
+        base_qs = Worker.objects.all()
+        if user.company.company_type == 'vendor':
+            base_qs = base_qs.filter(vendor__company=user.company)
+            
+        context['active_count'] = base_qs.filter(status='active').count()
+        context['vacation_count'] = base_qs.filter(status='vacation').count()
+        
+        return context
+
+class WorkerDetailView(LoginRequiredMixin, DetailView):
+    model = Worker
+    template_name = 'vendors-templates/worker_detail.html'
+    context_object_name = 'worker'
+
+    def get_queryset(self):
+        """
+        حماية البيانات:
+        - المورد يرى فقط عماله.
+        - العميل يرى جميع العمال (أو حسب المنطق الخاص بك).
+        """
+        user = self.request.user
+        qs = super().get_queryset()
+        
+        if user.company.company_type == 'vendor':
+            return qs.filter(vendor__company=user.company)
+            
+        return qs

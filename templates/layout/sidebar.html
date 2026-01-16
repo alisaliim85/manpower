@@ -9,41 +9,41 @@
             <i class="fas fa-times"></i>
         </button>
     </div>
-    
+
     <div class="sidebar-content">
-    <a href="{% if user.company.company_type == 'client' %}{% url 'client_dashboard' %}{% elif user.company.company_type == 'vendor' %}{% url 'vendor_dashboard' %}{% else %}{% url 'landing' %}{% endif %}" 
-       class="sidebar-item {% if request.resolver_match.url_name == 'client_dashboard' or request.resolver_match.url_name == 'vendor_dashboard' %}active{% endif %}">
-        <div class="icon-box">
-            <i class="fas fa-home"></i>
-        </div>
-        <span class="link-label">الرئيسية</span>
-    </a>
+        <a href="{% if user.company.company_type == 'client' %}{% url 'client_dashboard' %}{% elif user.company.company_type == 'vendor' %}{% url 'vendor_dashboard' %}{% else %}{% url 'landing' %}{% endif %}"
+            class="sidebar-item {% if request.resolver_match.url_name == 'client_dashboard' or request.resolver_match.url_name == 'vendor_dashboard' %}active{% endif %}">
+            <div class="icon-box">
+                <i class="fas fa-home"></i>
+            </div>
+            <span class="link-label">الرئيسية</span>
+        </a>
 
-    {% if user.company and user.company.company_type == 'client' %}
-    <a href="{% url 'vendors:vendor_list' %}" 
-       class="sidebar-item {% if 'vendors' in request.resolver_match.app_name %}active{% endif %}">
-        <div class="icon-box">
-            <i class="fas fa-building"></i>
-        </div>
-        <span class="link-label">الشركات</span>
-    </a>
-    {% endif %}
+        {% if user.company and user.company.company_type == 'client' %}
+        <a href="{% url 'vendors:vendor_list' %}"
+            class="sidebar-item {% if 'vendors' in request.resolver_match.app_name and request.resolver_match.url_name != 'worker_list' %}active{% endif %}">
+            <div class="icon-box">
+                <i class="fas fa-building"></i>
+            </div>
+            <span class="link-label">الشركات</span>
+        </a>
+        {% endif %}
 
-    <a href="{% url 'requests:list' %}" 
-       class="sidebar-item {% if 'requests' in request.resolver_match.app_name %}active{% endif %}">
-        <div class="icon-box">
-            <i class="fas fa-clipboard-list"></i>
-        </div>
-        <span class="link-label">الطلبات</span>
-    </a>
+        <a href="{% url 'requests:list' %}"
+            class="sidebar-item {% if 'requests' in request.resolver_match.app_name %}active{% endif %}">
+            <div class="icon-box">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <span class="link-label">الطلبات</span>
+        </a>
 
-    <a href="#" class="sidebar-item">
-        <div class="icon-box">
-            <i class="fas fa-users"></i>
-        </div>
-        <span class="link-label">العمالة</span>
-    </a>
-    
+        <a href="{% url 'vendors:worker_list' %}"
+            class="sidebar-item {% if request.resolver_match.url_name == 'worker_list' %}active{% endif %}">
+            <div class="icon-box">
+                <i class="fas fa-hard-hat"></i>
+            </div>
+            <span class="link-label">سجل العمالة</span>
+        </a>
     </div>
 </aside>
 
@@ -51,18 +51,23 @@
     /* 1. هيكل السايد بار العائم */
     .sidebar-mini {
         position: fixed;
-        right: 20px;       /* مسافة من اليمين لجعله عائماً */
-        top: 100px;        /* مسافة من الأعلى أسفل الهيدر */
-        bottom: 30px;      /* مسافة من الأسفل */
-        width: 180px;      /* عرض مناسب للأيقونة والنص */
+        right: 20px;
+        /* مسافة من اليمين لجعله عائماً */
+        top: 100px;
+        /* مسافة من الأعلى أسفل الهيدر */
+        bottom: 30px;
+        /* مسافة من الأسفل */
+        width: 180px;
+        /* عرض مناسب للأيقونة والنص */
         background: #ffffff;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.06);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
         display: flex;
         flex-direction: column;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 1100;
-        border-radius: 25px; /* زوايا دائرية كبيرة وجذابة */
-        border: 1px solid rgba(0,0,0,0.02);
+        border-radius: 25px;
+        /* زوايا دائرية كبيرة وجذابة */
+        border: 1px solid rgba(0, 0, 0, 0.02);
         overflow: hidden;
     }
 
@@ -140,7 +145,8 @@
 
     /* نص الرابط */
     .link-label {
-        margin-right: 12px; /* مسافة من الأيقونة لجهة اليمين (RTL) */
+        margin-right: 12px;
+        /* مسافة من الأيقونة لجهة اليمين (RTL) */
         font-size: 14px;
         font-weight: 500;
         white-space: nowrap;
@@ -158,7 +164,8 @@
 
     /* العنصر النشط (Active) */
     .sidebar-item.active {
-        background: var(--primary); /* يستخدم اللون الأخضر الخاص بك */
+        background: var(--primary);
+        /* يستخدم اللون الأخضر الخاص بك */
         color: #ffffff;
         box-shadow: 0 8px 15px rgba(16, 185, 129, 0.2);
     }
@@ -183,7 +190,8 @@
         border-radius: 15px;
         cursor: pointer;
         box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
-        display: none; /* مخفي افتراضياً */
+        display: none;
+        /* مخفي افتراضياً */
         align-items: center;
         justify-content: center;
         transition: 0.3s ease;
@@ -195,8 +203,15 @@
     }
 
     @keyframes slideIn {
-        from { opacity: 0; transform: translateX(30px); }
-        to { opacity: 1; transform: translateX(0); }
+        from {
+            opacity: 0;
+            transform: translateX(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
     }
 
     /* دعم الشاشات الصغيرة */
