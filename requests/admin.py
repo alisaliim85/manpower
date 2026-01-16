@@ -175,3 +175,4 @@ class RequestAdmin(admin.ModelAdmin):
     def get_fields(self, request, obj=None):
         fields = super().get_fields(request, obj)
         return [f for f in fields if f != "assigned_to"]
+

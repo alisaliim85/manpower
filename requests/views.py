@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import TemplateView, ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
-from .models import Request, RequestType, RequestField, RequestFieldValue, RequestComment
+from .models import Request, RequestType, RequestField, RequestFieldValue, RequestComment,RequestAttachment
 from vendors.models import Worker
 from django.contrib import messages
 from django.utils import timezone
@@ -37,7 +37,7 @@ class RequestWizardView(LoginRequiredMixin, TemplateView):
             title=request.POST.get('title', ''),
             notes=request.POST.get('notes', ''),
             created_by=request.user,
-            status='submitted',
+            status='draft',
             current_company=request.user.company
         )
 
@@ -54,9 +54,8 @@ class RequestWizardView(LoginRequiredMixin, TemplateView):
                 elif field.field_type == 'choice': fv.value_text = val
                 fv.save()
 
-        messages.success(request, "تم إرسال الطلب بنجاح!")
-        return redirect('requests:list')
-
+        messages.info(self.request, "تم حفظ الطلب كمسودة. يرجى مراجعته وإضافة المرفقات ثم الضغط على إرسال.")
+        return redirect('requests:detail', pk=request_obj.pk)
 # ==========================================
 # 2. قائمة الطلبات (List)
 # ==========================================
@@ -112,15 +111,16 @@ class RequestDetailView(LoginRequiredMixin, DetailView):
         context['dynamic_values'] = self.object.field_values.all().select_related('field')
         return context
 
-    # ---------------------------------------------------------
-    # دالة POST واحدة مدمجة تعالج كل شيء (أهم جزء للتصحيح)
-    # ---------------------------------------------------------
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         action = request.POST.get('action')
         user = request.user
         
-        # 1. إضافة تعليق (متاح للجميع)
+        # ------------------------------------------------------------------
+        # 1. إجراءات عامة (متاحة للجميع: عميل ومورد)
+        # ------------------------------------------------------------------
+
+        # أ) إضافة تعليق
         if action == 'add_comment':
             comment_body = request.POST.get('comment_body')
             if comment_body:
@@ -134,7 +134,26 @@ class RequestDetailView(LoginRequiredMixin, DetailView):
                 messages.error(request, "لا يمكن إضافة تعليق فارغ.")
             return redirect('requests:detail', pk=self.object.pk)
 
-        # 2. إجراءات المورد (Vendor)
+        # ب) رفع مرفق (عام للجميع)
+        if action == 'upload_attachment':
+            uploaded_file = request.FILES.get('attachment_file')
+            file_desc = request.POST.get('attachment_desc')
+            
+            if uploaded_file:
+                RequestAttachment.objects.create(
+                    request=self.object,
+                    file=uploaded_file,
+                    uploaded_by=user,
+                    description=file_desc
+                )
+                messages.success(request, "تم رفع الملف بنجاح.")
+            else:
+                messages.error(request, "يرجى اختيار ملف لرفعه.")
+            return redirect('requests:detail', pk=self.object.pk)
+
+        # ------------------------------------------------------------------
+        # 2. إجراءات خاصة بالمورد (Vendor Only)
+        # ------------------------------------------------------------------
         if user.company.company_type == 'vendor':
             if action == 'start_processing' and self.object.status == 'submitted':
                 self.object.status = 'in_progress'
@@ -175,25 +194,22 @@ class RequestDetailView(LoginRequiredMixin, DetailView):
                 self.object.save()
                 messages.success(request, "تم إكمال الطلب وإغلاقه بنجاح!")
 
-        # 3. إجراءات العميل (Client) - هنا التصحيح الأساسي لإعادة الإرسال
+        # ------------------------------------------------------------------
+        # 3. إجراءات خاصة بالعميل (Client Only)
+        # ------------------------------------------------------------------
         elif user.company.company_type == 'client':
             
+            # أ) إعادة الإرسال
             if action == 'resubmit' and self.object.status == 'returned':
-                # أ) تحديث البيانات الأساسية (العنوان والملاحظات)
                 new_title = request.POST.get('title')
                 new_notes = request.POST.get('notes')
                 if new_title: self.object.title = new_title
                 if new_notes: self.object.notes = new_notes
 
-                # ب) تحديث الحقول الديناميكية
-                # نمر على القيم الموجودة ونبحث عن تحديث لها في الـ POST
                 for fv in self.object.field_values.all():
-                    field_key = f'field_{fv.field.id}' # نفس الاسم في الـ HTML
-                    
+                    field_key = f'field_{fv.field.id}'
                     if field_key in request.POST:
                         val = request.POST.get(field_key)
-                        
-                        # تحديث القيمة حسب نوع الحقل
                         if fv.field.field_type in ['text', 'choice']:
                             fv.value_text = val
                         elif fv.field.field_type == 'number':
@@ -202,19 +218,26 @@ class RequestDetailView(LoginRequiredMixin, DetailView):
                             fv.value_date = val
                         elif fv.field.field_type == 'bool':
                             fv.value_bool = (val == 'True')
-                        
-                        fv.save() # حفظ القيمة الجديدة
+                        fv.save()
 
-                # ج) تغيير الحالة وتنظيف أسباب الرفض
                 self.object.status = 'submitted'
                 self.object.rejection_reason = "" 
                 self.object.return_reason = ""    
                 self.object.save()
-                
                 messages.success(request, "تم تحديث البيانات وإعادة إرسال الطلب بنجاح.")
 
-        return redirect('requests:detail', pk=self.object.pk)
+            # ب) حذف المرفق (متاح للعميل فقط)
+            elif action == 'delete_attachment':
+                att_id = request.POST.get('attachment_id')
+                try:
+                    # نتحقق أن المرفق يتبع نفس الطلب الحالي لزيادة الأمان
+                    att = RequestAttachment.objects.get(id=att_id, request=self.object)
+                    att.delete()
+                    messages.success(request, "تم حذف المرفق بنجاح.")
+                except RequestAttachment.DoesNotExist:
+                    messages.error(request, "عذراً، المرفق غير موجود أو لا تملك صلاحية حذفه.")
 
+        return redirect('requests:detail', pk=self.object.pk)
 # دالة مساعدة AJAX
 def get_request_fields(request, type_id):
     fields = RequestField.objects.filter(request_type_id=type_id, is_active=True).values(

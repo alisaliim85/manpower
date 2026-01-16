@@ -32,49 +32,49 @@
         <div class="action-instructions">
             <i class="fas fa-info-circle"></i>
             {% if req.status == 'returned' and request.user.company.company_type == 'client' %}
-                <span class="text-warning">يرجى مراجعة ملاحظات المورد وتصحيح النواقص ثم إعادة الإرسال.</span>
+            <span class="text-warning">يرجى مراجعة ملاحظات المورد وتصحيح النواقص ثم إعادة الإرسال.</span>
             {% else %}
-                الإجراءات المتاحة لهذا الطلب:
+            الإجراءات المتاحة لهذا الطلب:
             {% endif %}
         </div>
 
         <div class="buttons-group">
             {% if request.user.company.company_type == 'vendor' %}
-                {% if req.status == 'submitted' %}
-                <form method="post">{% csrf_token %}
-                    <button type="submit" name="action" value="start_processing" class="btn-action start pulse-animation">
-                        <i class="fas fa-play"></i> ابدأ المعالجة
-                    </button>
-                </form>
-                {% elif req.status == 'in_progress' %}
-                <button onclick="openCompleteModal()" class="btn-action complete">
-                    <i class="fas fa-check-double"></i> إكمال الطلب
+            {% if req.status == 'submitted' %}
+            <form method="post">{% csrf_token %}
+                <button type="submit" name="action" value="start_processing" class="btn-action start pulse-animation">
+                    <i class="fas fa-play"></i> ابدأ المعالجة
                 </button>
-                <button onclick="openReturnModal()" class="btn-action return warning-btn">
-                    <i class="fas fa-undo"></i> وجود نقص/إعادة
-                </button>
-                <button onclick="openRejectModal()" class="btn-action reject">
-                    <i class="fas fa-times"></i> رفض نهائي
-                </button>
-                {% endif %}
-            
-            {% elif request.user.company.company_type == 'client' %}
-                {% if req.status == 'returned' %}
-                <form method="post">{% csrf_token %}
-                    <button type="submit" name="action" value="resubmit" class="btn-action resubmit pulse-animation">
-                        <i class="fas fa-paper-plane"></i> إعادة إرسال الطلب
-                    </button>
-                </form>
-                {% endif %}
+            </form>
+            {% elif req.status == 'in_progress' %}
+            <button onclick="openCompleteModal()" class="btn-action complete">
+                <i class="fas fa-check-double"></i> إكمال الطلب
+            </button>
+            <button onclick="openReturnModal()" class="btn-action return warning-btn">
+                <i class="fas fa-undo"></i> وجود نقص/إعادة
+            </button>
+            <button onclick="openRejectModal()" class="btn-action reject">
+                <i class="fas fa-times"></i> رفض نهائي
+            </button>
             {% endif %}
-            
+
+            {% elif request.user.company.company_type == 'client' %}
+            {% if req.status == 'returned' %}
+            <form method="post">{% csrf_token %}
+                <button type="submit" name="action" value="resubmit" class="btn-action resubmit pulse-animation">
+                    <i class="fas fa-paper-plane"></i> إعادة إرسال الطلب
+                </button>
+            </form>
+            {% endif %}
+            {% endif %}
+
             <a href="{% url 'requests:list' %}" class="btn-secondary">عودة للقائمة</a>
         </div>
     </div>
     {% endif %}
 
     <div class="detail-grid">
-        
+
         <div class="data-card animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
             <div class="card-header-simple">
                 <h3><i class="fas fa-user-tie"></i> بيانات العامل</h3>
@@ -145,11 +145,12 @@
                     <span class="f-label">{{ val.field.label }}</span>
                     <span class="f-value">
                         {% if val.field.field_type == 'bool' %}
-                            {% if val.value_bool %} <span class="tag-yes">نعم</span> {% else %} <span class="tag-no">لا</span> {% endif %}
+                        {% if val.value_bool %} <span class="tag-yes">نعم</span> {% else %} <span
+                            class="tag-no">لا</span> {% endif %}
                         {% elif val.field.field_type == 'date' %}
-                            {{ val.value_date|date:"Y-m-d" }}
+                        {{ val.value_date|date:"Y-m-d" }}
                         {% else %}
-                            {{ val.value_text|default:"-" }}
+                        {{ val.value_text|default:"-" }}
                         {% endif %}
                     </span>
                 </div>
@@ -158,6 +159,76 @@
         </div>
     </div>
 
+    <div class="data-card animate__animated animate__fadeInUp" style="margin-top: 30px; animation-delay: 0.3s;">
+            <div class="card-header-simple">
+                <h3><i class="fas fa-paperclip"></i> المرفقات والوثائق</h3>
+            </div>
+
+            <div class="attachments-grid">
+                {% for att in req.attachments.all %}
+                <div class="attachment-item animate__animated animate__zoomIn">
+                    <div class="att-icon">
+                        {% if att.is_image %}
+                        <img src="{{ att.file.url }}" alt="preview">
+                        {% else %}
+                        <i class="fas fa-file-pdf text-danger"></i>
+                        {% endif %}
+                    </div>
+                    <div class="att-info">
+                        <span class="att-name" title="{{ att.filename }}">{{ att.description|default:att.filename
+                            }}</span>
+                        <span class="att-meta">
+                            {{ att.created_at|date:"Y-m-d" }} | {{ att.uploaded_by.get_full_name }}
+                        </span>
+                    </div>
+                    <div class="att-actions">
+                        <a href="{{ att.file.url }}" target="_blank" class="btn-view" title="معاينة"><i
+                                class="fas fa-eye"></i></a>
+                        <a href="{{ att.file.url }}" download class="btn-download" title="تحميل"><i
+                                class="fas fa-download"></i></a>
+                    {% if request.user.company.company_type == 'client' %}
+                        <form method="post" class="delete-att-form" onsubmit="return confirm('هل أنت متأكد من حذف هذا المرفق؟');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_attachment">
+                            <input type="hidden" name="attachment_id" value="{{ att.id }}">
+                            <button type="submit" class="btn-delete" title="حذف">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state-small full-width">
+                    <p>لا توجد مرفقات (عقود، صور إقامة، فحص طبي) حتى الآن.</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if req.status != 'completed' and req.status != 'rejected' %}
+            <div class="upload-section">
+                <form method="post" enctype="multipart/form-data" class="upload-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="upload_attachment">
+
+                    <div class="upload-inputs">
+                        <div class="file-input-wrapper">
+                            <input type="file" name="attachment_file" id="file-upload" required>
+                            <label for="file-upload" class="file-label">
+                                <i class="fas fa-cloud-upload-alt"></i> اختر ملف (PDF, IMG)
+                            </label>
+                        </div>
+                        <input type="text" name="attachment_desc" placeholder="وصف الملف (مثال: صورة الإقامة)"
+                            class="desc-input">
+                        <button type="submit" class="btn-action pulse-animation small-btn">
+                            <i class="fas fa-plus"></i> رفع
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+
     <div class="data-card animate__animated animate__fadeInUp" style="margin-top: 30px; animation-delay: 0.4s;">
         <div class="card-header-simple">
             <h3><i class="fas fa-comments"></i> النقاشات والتعليقات</h3>
@@ -165,7 +236,8 @@
 
         <div class="comments-history">
             {% for comment in req.comments.all %}
-            <div class="comment-bubble {% if comment.author == request.user %}own{% endif %} animate__animated animate__fadeInRight">
+            <div
+                class="comment-bubble {% if comment.author == request.user %}own{% endif %} animate__animated animate__fadeInRight">
                 <div class="comment-meta">
                     <span class="author-name">{{ comment.author.get_full_name }}</span>
                     <span class="comment-date">{{ comment.created_at|date:"Y-m-d h:i A" }}</span>
@@ -182,12 +254,15 @@
             {% endfor %}
         </div>
 
+        
+
         <div class="add-comment-section">
             <form method="post">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="add_comment">
                 <div class="comment-input-wrapper">
-                    <textarea name="comment_body" rows="2" placeholder="اكتب ملاحظة، استفسار، أو رد هنا..." required></textarea>
+                    <textarea name="comment_body" rows="2" placeholder="اكتب ملاحظة، استفسار، أو رد هنا..."
+                        required></textarea>
                     <button type="submit" class="btn-send" title="إرسال التعليق">
                         <i class="fas fa-paper-plane"></i>
                     </button>
@@ -211,7 +286,8 @@
                 <p>هل أنت متأكد؟ سيتم إغلاق الطلب ولن يمكن التراجع عن هذا الإجراء.</p>
                 <div class="form-group">
                     <label>سبب الرفض <span class="text-danger">*</span></label>
-                    <textarea name="rejection_reason" rows="3" required placeholder="يرجى توضيح سبب الرفض..."></textarea>
+                    <textarea name="rejection_reason" rows="3" required
+                        placeholder="يرجى توضيح سبب الرفض..."></textarea>
                 </div>
             </div>
             <div class="modal-footer">
@@ -273,15 +349,15 @@
 <script>
     function openRejectModal() { document.getElementById('rejectModal').classList.add('active'); }
     function closeRejectModal() { document.getElementById('rejectModal').classList.remove('active'); }
-    
+
     function openReturnModal() { document.getElementById('returnModal').classList.add('active'); }
     function closeReturnModal() { document.getElementById('returnModal').classList.remove('active'); }
-    
+
     function openCompleteModal() { document.getElementById('completeModal').classList.add('active'); }
     function closeCompleteModal() { document.getElementById('completeModal').classList.remove('active'); }
-    
+
     // Close on outside click
-    window.onclick = function(event) {
+    window.onclick = function (event) {
         if (event.target.classList.contains('modal-overlay')) {
             event.target.classList.remove('active');
         }
@@ -299,113 +375,729 @@
         --success: #10b981;
         --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.02);
     }
-    .dashboard-wrapper { direction: rtl; margin-right: 80px; padding-bottom: 60px; }
-    
+
+    .dashboard-wrapper {
+        direction: rtl;
+        margin-right: 80px;
+        padding-bottom: 60px;
+    }
+
     /* 1. Header */
-    .db-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-    .welcome-text { display: flex; align-items: center; gap: 15px; }
-    .header-icon { width: 55px; height: 55px; background: rgba(16, 185, 129, 0.1); color: var(--primary); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
-    .db-header h1 { font-size: 24px; font-weight: 800; color: var(--dark); margin: 0; display: flex; align-items: center; gap: 10px; }
-    .id-badge { background: #e2e8f0; color: #64748b; padding: 2px 10px; border-radius: 8px; font-size: 16px; font-weight: normal; }
-    .date-text { color: #94a3b8; font-weight: bold; font-family: sans-serif; }
+    .db-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .welcome-text {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .header-icon {
+        width: 55px;
+        height: 55px;
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--primary);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+
+    .db-header h1 {
+        font-size: 24px;
+        font-weight: 800;
+        color: var(--dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .id-badge {
+        background: #e2e8f0;
+        color: #64748b;
+        padding: 2px 10px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: normal;
+    }
+
+    .date-text {
+        color: #94a3b8;
+        font-weight: bold;
+        font-family: sans-serif;
+    }
 
     /* 2. Actions Bar */
     .actions-bar {
-        background: white; padding: 20px 30px; border-radius: 20px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.03); border: 1px solid #e2e8f0;
-        display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;
+        background: white;
+        padding: 20px 30px;
+        border-radius: 20px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.03);
+        border: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
     }
-    .action-instructions { color: #64748b; font-size: 14px; display: flex; align-items: center; gap: 8px; font-weight: 500; }
-    .buttons-group { display: flex; gap: 10px; align-items: center; }
-    .btn-action { padding: 10px 20px; border-radius: 12px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; color: white; transition: 0.3s; font-size: 14px; text-decoration: none; }
-    .btn-action:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-    
-    .btn-action.start { background: #3b82f6; } /* Blue */
-    .btn-action.complete { background: var(--success); } /* Green */
-    .btn-action.return { background: var(--warning); color: white; } /* Orange */
-    .btn-action.reject { background: white; color: var(--danger); border: 1px solid #fee2e2; }
-    .btn-action.reject:hover { background: var(--danger); color: white; }
-    .btn-action.resubmit { background: var(--primary); }
 
-    .btn-secondary { background: #f1f5f9; color: #64748b; padding: 10px 18px; border-radius: 12px; text-decoration: none; font-weight: bold; transition: 0.2s; }
-    .btn-secondary:hover { background: #e2e8f0; color: var(--dark); }
+    .action-instructions {
+        color: #64748b;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+    }
+
+    .buttons-group {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .btn-action {
+        padding: 10px 20px;
+        border-radius: 12px;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: white;
+        transition: 0.3s;
+        font-size: 14px;
+        text-decoration: none;
+    }
+/* تنسيق زر الحذف */
+.delete-att-form {
+    flex: 1; /* ليأخذ مساحة متساوية مع الأزرار الأخرى */
+    display: flex;
+}
+
+.btn-delete {
+    width: 100%;
+    border: none;
+    background: #fee2e2;
+    color: #dc2626;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 5px;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-delete:hover {
+    background: #dc2626;
+    color: white;
+}
+    .btn-action:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-action.start {
+        background: #3b82f6;
+    }
+
+    /* Blue */
+    .btn-action.complete {
+        background: var(--success);
+    }
+
+    /* Green */
+    .btn-action.return {
+        background: var(--warning);
+        color: white;
+    }
+
+    /* Orange */
+    .btn-action.reject {
+        background: white;
+        color: var(--danger);
+        border: 1px solid #fee2e2;
+    }
+
+    .btn-action.reject:hover {
+        background: var(--danger);
+        color: white;
+    }
+
+    .btn-action.resubmit {
+        background: var(--primary);
+    }
+
+    .btn-secondary {
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 10px 18px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: 0.2s;
+    }
+
+    .btn-secondary:hover {
+        background: #e2e8f0;
+        color: var(--dark);
+    }
 
     /* 3. Detail Grid & Cards */
-    .detail-grid { display: grid; grid-template-columns: 350px 1fr; gap: 25px; align-items: start; }
-    .data-card { background: white; border-radius: 24px; padding: 25px; box-shadow: var(--card-shadow); border: 1px solid #f1f5f9; }
-    .card-header-simple { border-bottom: 1px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 20px; }
-    .card-header-simple h3 { margin: 0; font-size: 16px; color: var(--dark); display: flex; align-items: center; gap: 10px; }
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 25px;
+        align-items: start;
+    }
+
+    .data-card {
+        background: white;
+        border-radius: 24px;
+        padding: 25px;
+        box-shadow: var(--card-shadow);
+        border: 1px solid #f1f5f9;
+    }
+
+    .card-header-simple {
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+    }
+
+    .card-header-simple h3 {
+        margin: 0;
+        font-size: 16px;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
 
     /* Worker Profile */
-    .worker-profile { text-align: center; padding-bottom: 20px; border-bottom: 1px dashed #e2e8f0; margin-bottom: 20px; }
-    .avatar-large { width: 80px; height: 80px; background: #e0f2fe; color: #0369a1; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: bold; margin: 0 auto 15px; border: 4px solid #f0f9ff; }
-    .worker-name { margin: 0; color: var(--dark); font-size: 18px; font-weight: 800; }
-    .worker-role { color: #64748b; font-size: 14px; }
-    .info-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f8fafc; }
-    .info-item .label { color: #94a3b8; font-size: 13px; }
-    .info-item .value { font-weight: bold; color: var(--dark); font-size: 14px; }
+    .worker-profile {
+        text-align: center;
+        padding-bottom: 20px;
+        border-bottom: 1px dashed #e2e8f0;
+        margin-bottom: 20px;
+    }
+
+    .avatar-large {
+        width: 80px;
+        height: 80px;
+        background: #e0f2fe;
+        color: #0369a1;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        font-weight: bold;
+        margin: 0 auto 15px;
+        border: 4px solid #f0f9ff;
+    }
+
+    .worker-name {
+        margin: 0;
+        color: var(--dark);
+        font-size: 18px;
+        font-weight: 800;
+    }
+
+    .worker-role {
+        color: #64748b;
+        font-size: 14px;
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #f8fafc;
+    }
+
+    .info-item .label {
+        color: #94a3b8;
+        font-size: 13px;
+    }
+
+    .info-item .value {
+        font-weight: bold;
+        color: var(--dark);
+        font-size: 14px;
+    }
 
     /* Alerts */
-    .alert-box.warning { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; padding: 15px; border-radius: 12px; display: flex; gap: 10px; margin-bottom: 20px; }
-    .rejection-alert { background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 15px; display: flex; gap: 10px; margin-bottom: 20px; color: #991b1b; }
+    .alert-box.warning {
+        background: #fffbeb;
+        border: 1px solid #fcd34d;
+        color: #92400e;
+        padding: 15px;
+        border-radius: 12px;
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .rejection-alert {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 12px;
+        padding: 15px;
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        color: #991b1b;
+    }
 
     /* Dynamic Fields */
-    .dynamic-fields-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
-    .field-box { background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #f1f5f9; }
-    .full-width { grid-column: 1 / -1; }
-    .f-label { display: block; color: #94a3b8; font-size: 12px; margin-bottom: 5px; }
-    .f-value { display: block; color: var(--dark); font-weight: bold; font-size: 15px; }
-    .tag-yes { color: var(--success); background: #dcfce7; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
-    .tag-no { color: var(--danger); background: #fee2e2; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+    .dynamic-fields-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+    }
+
+    .field-box {
+        background: #f8fafc;
+        padding: 15px;
+        border-radius: 12px;
+        border: 1px solid #f1f5f9;
+    }
+
+    .full-width {
+        grid-column: 1 / -1;
+    }
+
+    .f-label {
+        display: block;
+        color: #94a3b8;
+        font-size: 12px;
+        margin-bottom: 5px;
+    }
+
+    .f-value {
+        display: block;
+        color: var(--dark);
+        font-weight: bold;
+        font-size: 15px;
+    }
+
+    .tag-yes {
+        color: var(--success);
+        background: #dcfce7;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+    }
+
+    .tag-no {
+        color: var(--danger);
+        background: #fee2e2;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+    }
 
     /* 4. Comments Section */
-    .comments-history { max-height: 400px; overflow-y: auto; padding: 10px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 15px; }
-    .comment-bubble { background: #f1f5f9; padding: 15px; border-radius: 18px 18px 0 18px; max-width: 80%; align-self: flex-start; }
-    .comment-bubble.own { background: rgba(16, 185, 129, 0.1); border-radius: 18px 18px 18px 0; border-right: 4px solid var(--primary); align-self: flex-end; }
-    .comment-meta { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 11px; color: #94a3b8; }
-    .author-name { font-weight: 800; color: var(--dark); }
-    .comment-body { color: #334155; font-size: 14px; line-height: 1.6; }
-    
-    .comment-input-wrapper { display: flex; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 15px; border: 1px solid #e2e8f0; }
-    .comment-input-wrapper textarea { flex: 1; border: none; background: transparent; outline: none; resize: none; font-family: inherit; padding: 10px; }
-    .btn-send { background: var(--primary); color: white; border: none; width: 45px; height: 45px; border-radius: 12px; cursor: pointer; transition: 0.3s; }
-    .btn-send:hover { background: var(--primary-dark); transform: scale(1.05); }
+    .comments-history {
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 10px;
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .comment-bubble {
+        background: #f1f5f9;
+        padding: 15px;
+        border-radius: 18px 18px 0 18px;
+        max-width: 80%;
+        align-self: flex-start;
+    }
+
+    .comment-bubble.own {
+        background: rgba(16, 185, 129, 0.1);
+        border-radius: 18px 18px 18px 0;
+        border-right: 4px solid var(--primary);
+        align-self: flex-end;
+    }
+
+    .comment-meta {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        font-size: 11px;
+        color: #94a3b8;
+    }
+
+    .author-name {
+        font-weight: 800;
+        color: var(--dark);
+    }
+
+    .comment-body {
+        color: #334155;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    .comment-input-wrapper {
+        display: flex;
+        gap: 10px;
+        background: #f8fafc;
+        padding: 10px;
+        border-radius: 15px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .comment-input-wrapper textarea {
+        flex: 1;
+        border: none;
+        background: transparent;
+        outline: none;
+        resize: none;
+        font-family: inherit;
+        padding: 10px;
+    }
+
+    .btn-send {
+        background: var(--primary);
+        color: white;
+        border: none;
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    .btn-send:hover {
+        background: var(--primary-dark);
+        transform: scale(1.05);
+    }
 
     /* Status Badges */
-    .status-badge-lg { padding: 8px 16px; border-radius: 10px; font-weight: bold; font-size: 14px; display: inline-flex; gap: 8px; align-items: center; }
-    .status-badge-lg.submitted { background: #fff7ed; color: #ea580c; }
-    .status-badge-lg.in_progress { background: #eff6ff; color: #2563eb; }
-    .status-badge-lg.returned { background: #fffbeb; color: #b45309; }
-    .status-badge-lg.completed { background: #f0fdf4; color: #16a34a; }
-    .status-badge-lg.rejected { background: #fef2f2; color: #ef4444; }
+    .status-badge-lg {
+        padding: 8px 16px;
+        border-radius: 10px;
+        font-weight: bold;
+        font-size: 14px;
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .status-badge-lg.submitted {
+        background: #fff7ed;
+        color: #ea580c;
+    }
+
+    .status-badge-lg.in_progress {
+        background: #eff6ff;
+        color: #2563eb;
+    }
+
+    .status-badge-lg.returned {
+        background: #fffbeb;
+        color: #b45309;
+    }
+
+    .status-badge-lg.completed {
+        background: #f0fdf4;
+        color: #16a34a;
+    }
+
+    .status-badge-lg.rejected {
+        background: #fef2f2;
+        color: #ef4444;
+    }
 
     /* Modals */
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1000; display: none; align-items: center; justify-content: center; }
-    .modal-overlay.active { display: flex; }
-    .modal-content { background: white; width: 500px; max-width: 90%; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); overflow: hidden; }
-    .modal-header { padding: 20px 25px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
-    .modal-body { padding: 25px; }
-    .modal-footer { padding: 20px 25px; background: #f8fafc; display: flex; justify-content: flex-end; gap: 10px; }
-    .close-btn { background: none; border: none; font-size: 24px; color: #94a3b8; cursor: pointer; }
-    .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--dark); font-size: 13px; }
-    .form-group textarea { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; outline: none; font-family: inherit; transition: 0.3s; }
-    .form-group textarea:focus { border-color: var(--primary); background: white; }
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background: white;
+        width: 500px;
+        max-width: 90%;
+        border-radius: 24px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+    }
+
+    .modal-header {
+        padding: 20px 25px;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-body {
+        padding: 25px;
+    }
+
+    .modal-footer {
+        padding: 20px 25px;
+        background: #f8fafc;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: #94a3b8;
+        cursor: pointer;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+        color: var(--dark);
+        font-size: 13px;
+    }
+
+    .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        outline: none;
+        font-family: inherit;
+        transition: 0.3s;
+    }
+
+    .form-group textarea:focus {
+        border-color: var(--primary);
+        background: white;
+    }
+    /* تنسيقات المرفقات */
+.attachments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.attachment-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.attachment-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    border-color: var(--primary);
+}
+
+.att-icon {
+    height: 80px;
+    background: white;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-size: 30px;
+}
+
+.att-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.att-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.att-name {
+    font-weight: bold;
+    font-size: 13px;
+    color: var(--dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.att-meta {
+    font-size: 10px;
+    color: #94a3b8;
+}
+
+.att-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.att-actions a {
+    flex: 1;
+    text-align: center;
+    padding: 5px;
+    border-radius: 6px;
+    font-size: 12px;
+    transition: 0.2s;
+}
+
+.btn-view { background: #e0f2fe; color: #0284c7; }
+.btn-view:hover { background: #0284c7; color: white; }
+
+.btn-download { background: #f1f5f9; color: #64748b; }
+.btn-download:hover { background: #64748b; color: white; }
+
+.empty-state-small {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 20px;
+    color: #94a3b8;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px dashed #cbd5e1;
+}
+
+/* تنسيقات نموذج الرفع */
+.upload-section {
+    background: #fff;
+    padding-top: 15px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.upload-inputs {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.file-input-wrapper {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+.file-input-wrapper input[type=file] {
+    font-size: 100px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.file-label {
+    background: #f1f5f9;
+    color: var(--dark);
+    padding: 10px 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px dashed #cbd5e1;
+    transition: 0.3s;
+}
+
+.file-input-wrapper:hover .file-label {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: #f0fdf4;
+}
+
+.desc-input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 13px;
+    outline: none;
+}
+
+.desc-input:focus { border-color: var(--primary); }
+
+.small-btn { padding: 10px 20px; }
 
     /* Animation */
-    .pulse-animation { animation: pulse 2s infinite; }
+    .pulse-animation {
+        animation: pulse 2s infinite;
+    }
+
     @keyframes pulse {
-        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-        70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        0% {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+        }
+
+        70% {
+            box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+        }
     }
 
     /* Responsive */
     @media (max-width: 992px) {
-        .detail-grid { grid-template-columns: 1fr; }
-        .actions-bar { flex-direction: column; gap: 15px; align-items: stretch; }
-        .buttons-group { flex-direction: column; }
-        .btn-action { justify-content: center; }
-        .btn-secondary { justify-content: center; }
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .actions-bar {
+            flex-direction: column;
+            gap: 15px;
+            align-items: stretch;
+        }
+
+        .buttons-group {
+            flex-direction: column;
+        }
+
+        .btn-action {
+            justify-content: center;
+        }
+
+        .btn-secondary {
+            justify-content: center;
+        }
     }
 </style>
 {% endblock %}

@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+import os
 
 from accounts.models import Company
 from vendors.models import Worker
@@ -387,3 +388,36 @@ class RequestComment(models.Model):
 
     def __str__(self):
         return f"تعليق من {self.author.get_full_name()} على طلب #{self.request.id}"
+
+
+import os
+
+def get_attachment_upload_path(instance, filename):
+    """
+    توليد مسار حفظ الملف ليكون:
+    media/request_docs/request_<id>/<filename>
+    مثال:
+    request_docs/request_15/iqama.png
+    """
+    # instance.request.id هو رقم الطلب المرتبط
+    return f'request_docs/request_{instance.request.id}/{filename}'
+
+class RequestAttachment(models.Model):
+    request = models.ForeignKey(Request, on_delete=models.CASCADE, related_name='attachments', verbose_name="الطلب")
+    file = models.FileField(upload_to=get_attachment_upload_path, verbose_name="الملف")
+    uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="تم الرفع بواسطة")
+    description = models.CharField(max_length=255, blank=True, verbose_name="وصف الملف")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"مرفق لـ {self.request.id}"
+
+    def filename(self):
+        return os.path.basename(self.file.name)
+
+    def is_image(self):
+        name = self.file.name.lower()
+        return name.endswith(('.png', '.jpg', '.jpeg', '.gif'))
