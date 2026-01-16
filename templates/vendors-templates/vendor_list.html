@@ -1,194 +1,204 @@
 {% extends "layout/index.html" %}
-
 {% block title %} {{ title }} | مواردي {% endblock %}
 
 {% block content %}
-<div class="vendor-list-container">
-    <div class="page-header-action animate__animated animate__fadeIn">
-        <div class="header-info">
-            <h1><i class="fas fa-building text-primary"></i> شركات التوريد</h1>
-            <p>إدارة بيانات ومتابعة أداء شركات التوريد المتعاقد معها</p>
+<section class="dashboard-wrapper container">
+
+    <div class="db-header animate__animated animate__fadeIn">
+        <div class="welcome-text">
+            <div class="header-icon">
+                <i class="fas fa-building"></i>
+            </div>
+            <div>
+                <h1>إدارة شركات التوريد</h1>
+                <p>استعراض وتعديل بيانات الشركات المعتمدة في النظام.</p>
+            </div>
         </div>
-        <a href="{% url 'vendors:vendor_create' %}" class="btn-create">
-            <i class="fas fa-plus"></i> إضافة شركة جديدة
-        </a>
+
+        <div class="header-actions">
+            <a href="{% url 'vendors:vendor_create' %}" class="btn-action pulse-animation">
+                <i class="fas fa-plus"></i> إضافة شركة توريد
+            </a>
+        </div>
     </div>
 
-    <div class="vendors-grid">
-        {% for vendor in vendors %}
-        <div class="vendor-card animate__animated animate__zoomIn">
-            <div class="vendor-status {% if vendor.is_active %}status-online{% else %}status-offline{% endif %}">
-                {% if vendor.is_active %}نشط{% else %}متوقف{% endif %}
+    <div class="stats-grid">
+        <div class="stat-item animate__animated animate__fadeInUp" style="animation-delay: 0.1s;">
+            <div class="stat-icon blue"><i class="fas fa-city"></i></div>
+            <div class="stat-info">
+                <span class="label">إجمالي الشركات</span>
+                <span class="count">{{ vendors.count }}</span>
             </div>
-            
-            <div class="vendor-icon">
-                <i class="fas fa-industry"></i>
-            </div>
-            
-            <h3 class="vendor-name">{{ vendor.company.name|default:vendor.contact_name }}</h3>
-            
-            <div class="vendor-stats">
-                <div class="stat-item">
-                    <span class="stat-value">{{ vendor.workers_count }}</span>
-                    <span class="stat-label">عامل</span>
-                </div>
-                <div class="stat-divider"></div>
-                <div class="stat-item">
-                    <span class="stat-value"><i class="fas fa-phone-alt"></i></span>
-                    <span class="stat-label">اتصال</span>
-                </div>
-            </div>
+        </div>
 
-            <div class="vendor-footer">
-                <a href="{% url 'vendors:vendor_detail' vendor.pk %}" class="btn-details">
-                    تفاصيل الشركة <i class="fas fa-chevron-left"></i>
-                </a>
+        <div class="stat-item animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+            <div class="stat-icon green"><i class="fas fa-check-double"></i></div>
+            <div class="stat-info">
+                <span class="label">شركات نشطة</span>
+                <span class="count">{{ active_count|default:"-" }}</span>
             </div>
         </div>
-        {% empty %}
-        <div class="no-data">
-            <img src="/static/images/empty.svg" alt="لا توجد بيانات" style="width: 150px; opacity: 0.5;">
-            <p>لا توجد شركات توريد مسجلة حالياً.</p>
-        </div>
-        {% endfor %}
     </div>
-</div>
+
+    <div class="data-card animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
+        
+        <div class="card-header-row">
+            <h3><i class="fas fa-list"></i> قائمة شركات التوريد</h3>
+            
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="بحث باسم الشركة، اسم المسؤول، أو رقم الهاتف...">
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>الشركة</th>
+                        <th>المسؤول</th>
+                        <th>رقم التواصل</th>
+                        <th>عدد العمالة</th>
+                        <th>الحالة</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for vendor in vendors %}
+                    <tr class="animate__animated animate__fadeInUp" style="animation-delay: 0.{{ forloop.counter }}s;">
+                        <td>
+                            <div class="user-cell">
+                                <div class="avatar-circle">
+                                    {{ vendor.company.name|slice:":1" }}
+                                </div>
+                                <div>
+                                    <span class="name">{{ vendor.company.name }}</span>
+                                    <span class="sub-text">سجل تجاري: {{ vendor.company.registration_number|default:"غير متوفر" }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ vendor.contact_name }}</td>
+                        <td class="id-cell">{{ vendor.contact_phone }}</td>
+                        <td>
+                            <span class="badge pending-light">
+                                <i class="fas fa-users"></i> {{ vendor.workers_count }} عامل
+                            </span>
+                        </td>
+                        <td>
+                            {% if vendor.is_active %}
+                                <span class="status-badge-custom active">نشط</span>
+                            {% else %}
+                                <span class="status-badge-custom inactive">متوقف</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'vendors:vendor_detail' vendor.pk %}" class="btn-icon-view" title="عرض التفاصيل">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <i class="fas fa-building" style="font-size: 40px; opacity: 0.3;"></i>
+                            <p>لا توجد شركات مسجلة حالياً.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</section>
 
 <style>
-    /* التنسيقات الخاصة بصفحة الشركات */
-    .vendor-list-container {
-        padding: 20px;
+    /* =========================================
+       نظام التصميم الموحد (Design System)
+       ========================================= */
+    :root {
+        --primary: #10b981;
+        --primary-dark: #059669;
+        --dark: #1e293b;
+        --light-bg: #f8fafc;
     }
 
-    .page-header-action {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 30px;
+    .dashboard-wrapper { direction: rtl; margin-right: 0px; }
+
+    /* --- الهيدر --- */
+    .db-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .welcome-text { display: flex; align-items: center; gap: 15px; }
+    .header-icon { 
+        width: 50px; height: 50px; background: rgba(16, 185, 129, 0.1); color: var(--primary); 
+        border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;
+    }
+    .db-header h1 { font-size: 22px; font-weight: 800; color: var(--dark); margin: 0; }
+    .db-header p { color: #64748b; margin: 0; font-size: 14px; }
+
+    /* --- الأزرار والحركة --- */
+    .btn-action {
+        background: var(--dark); color: white; padding: 10px 20px; border-radius: 10px;
+        text-decoration: none; font-weight: bold; display: flex; align-items: center; gap: 8px; transition: 0.3s;
+    }
+    .btn-action:hover { transform: translateY(-3px); background: #334155; }
+    
+    .pulse-animation { animation: pulse 2s infinite; }
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+        70% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
     }
 
-    .header-info h1 {
-        font-size: 24px;
-        font-weight: 800;
-        margin: 0;
-        color: #1e293b;
-    }
+    /* --- الجدول والكروت --- */
+    .data-card { background: white; border-radius: 24px; padding: 25px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.02); }
+    .card-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 15px;}
+    .card-header-row h3 { margin: 0; font-size: 18px; color: var(--dark); }
 
-    .header-info p {
-        color: #64748b;
-        margin: 5px 0 0 0;
+    .search-box { position: relative; width: 300px; }
+    .search-box input {
+        width: 100%; padding: 10px 40px 10px 15px; border: 1px solid #e2e8f0; 
+        border-radius: 12px; background: #f8fafc; outline: none; transition: 0.3s;
     }
+    .search-box input:focus { border-color: var(--primary); background: white; }
+    .search-box i { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8; }
 
-    .btn-create {
-        background: var(--primary);
-        color: white;
-        padding: 12px 24px;
-        border-radius: 14px;
-        text-decoration: none;
-        font-weight: 700;
-        box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);
-        transition: 0.3s;
+    .modern-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+    .modern-table th { text-align: right; color: #94a3b8; font-weight: normal; padding: 10px; font-size: 13px; }
+    .modern-table td { background: #f8fafc; padding: 15px; border: none; vertical-align: middle; transition: 0.3s;}
+    .modern-table tr:hover td { background: #f1f5f9; transform: scale(1.002); }
+    .modern-table tr td:first-child { border-radius: 0 15px 15px 0; }
+    .modern-table tr td:last-child { border-radius: 15px 0 0 15px; }
+
+    /* --- تفاصيل الصفوف --- */
+    .user-cell { display: flex; align-items: center; gap: 12px; }
+    .avatar-circle { 
+        width: 35px; height: 35px; background: #e0f2fe; color: #0369a1; 
+        border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; 
     }
+    .user-cell .name { display: block; font-weight: bold; color: var(--dark); font-size: 14px; }
+    .user-cell .sub-text { font-size: 11px; color: #94a3b8; }
+    .id-cell { font-family: monospace; font-weight: bold; color: #64748b; }
 
-    .btn-create:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 15px 25px rgba(16, 185, 129, 0.3);
+    /* --- البادجات والرموز --- */
+    .status-badge-custom { padding: 4px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; }
+    .status-badge-custom.active { background: #dcfce7; color: #15803d; }
+    .status-badge-custom.inactive { background: #fee2e2; color: #b91c1c; }
+
+    .btn-icon-view {
+        width: 35px; height: 35px; border-radius: 10px; background: white; border: 1px solid #e2e8f0;
+        color: #64748b; display: flex; align-items: center; justify-content: center; transition: 0.3s; text-decoration: none;
     }
+    .btn-icon-view:hover { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 5px 15px rgba(16, 185, 129, 0.2); }
 
-    /* تصميم الكروت */
-    .vendors-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 25px;
-    }
+    .empty-state { text-align: center; padding: 40px; color: #94a3b8; }
 
-    .vendor-card {
-        background: white;
-        border-radius: 24px;
-        padding: 30px 20px;
-        text-align: center;
-        position: relative;
-        transition: 0.3s;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.02);
-        border: 1px solid #f1f5f9;
-    }
-
-    .vendor-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 20px 40px rgba(0,0,0,0.06);
-    }
-
-    .vendor-status {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        padding: 5px 12px;
-        border-radius: 8px;
-        font-size: 11px;
-        font-weight: 800;
-    }
-
-    .status-online { background: #dcfce7; color: #15803d; }
-    .status-offline { background: #fee2e2; color: #b91c1c; }
-
-    .vendor-icon {
-        width: 70px;
-        height: 70px;
-        background: #f8fafc;
-        color: var(--primary);
-        font-size: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 20px;
-        border-radius: 20px;
-    }
-
-    .vendor-name {
-        font-size: 18px;
-        color: #1e293b;
-        margin-bottom: 20px;
-    }
-
-    .vendor-stats {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 20px;
-        background: #f8fafc;
-        padding: 15px;
-        border-radius: 16px;
-        margin-bottom: 25px;
-    }
-
-    .stat-value {
-        display: block;
-        font-size: 18px;
-        font-weight: 800;
-        color: #1e293b;
-    }
-
-    .stat-label {
-        font-size: 12px;
-        color: #94a3b8;
-    }
-
-    .stat-divider {
-        width: 1px;
-        height: 30px;
-        background: #e2e8f0;
-    }
-
-    .btn-details {
-        color: var(--primary);
-        text-decoration: none;
-        font-weight: 700;
-        font-size: 14px;
-        transition: 0.3s;
-    }
-
-    .btn-details:hover {
-        letter-spacing: 0.5px;
-    }
+    /* --- الإحصائيات --- */
+    .stats-grid { display: flex; gap: 20px; margin-bottom: 30px; }
+    .stat-item { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.02); display: flex; align-items: center; gap: 15px; flex: 1; }
+    .stat-icon { width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .blue { background: #eff6ff; color: #3b82f6; }
+    .green { background: #f0fdf4; color: #16a34a; }
+    .stat-info .label { display: block; color: #64748b; font-size: 12px; }
+    .stat-info .count { font-size: 22px; font-weight: 800; color: var(--dark); }
 </style>
 {% endblock %}

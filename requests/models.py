@@ -363,3 +363,27 @@ class RequestFieldValue(models.Model):
             raise ValidationError(
                 "هذا الحقل إلزامي ولم يتم إدخال قيمة."
             )
+# requests/models.py
+
+class RequestComment(models.Model):
+    request = models.ForeignKey(
+        Request, 
+        on_delete=models.CASCADE, 
+        related_name="comments", 
+        verbose_name="الطلب"
+    )
+    author = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        verbose_name="كاتب التعليق"
+    )
+    body = models.TextField(verbose_name="نص التعليق")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاريخ التعليق")
+
+    class Meta:
+        verbose_name = "تعليق الطلب"
+        verbose_name_plural = "تعليقات الطلبات"
+        ordering = ("-created_at",) # الأحدث أولاً
+
+    def __str__(self):
+        return f"تعليق من {self.author.get_full_name()} على طلب #{self.request.id}"
