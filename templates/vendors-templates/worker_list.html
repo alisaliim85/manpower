@@ -1,0 +1,308 @@
+{% extends "layout/index.html" %}
+{% block title %}سجل العمالة | مواردي{% endblock %}
+
+{% block content %}
+<section class="dashboard-wrapper container">
+
+    <div class="db-header animate__animated animate__fadeIn">
+        <div class="welcome-text">
+            <div class="header-icon">
+                <i class="fas fa-hard-hat"></i>
+            </div>
+            <div>
+                <h1>سجل القوى العاملة</h1>
+                <p>إدارة ومتابعة بيانات العمالة، حالاتهم الوظيفية، وتواريخ انتهاء الوثائق.</p>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            {% if request.user.company.company_type == 'vendor' or request.user.is_superuser %}
+            <a href="#" class="btn-action pulse-animation">
+                <i class="fas fa-plus"></i> إضافة عامل جديد
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-item animate__animated animate__fadeInUp" style="animation-delay: 0.1s;">
+            <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+            <div class="stat-info">
+                <span class="label">إجمالي العمالة</span>
+                <span class="count">{{ page_obj.paginator.count|default:"0" }}</span>
+            </div>
+        </div>
+        <div class="stat-item animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+            <div class="stat-icon green"><i class="fas fa-user-check"></i></div>
+            <div class="stat-info">
+                <span class="label">على رأس العمل</span>
+                <span class="count">{{ active_count|default:"-" }}</span>
+            </div>
+        </div>
+        <div class="stat-item animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
+            <div class="stat-icon orange"><i class="fas fa-plane-departure"></i></div>
+            <div class="stat-info">
+                <span class="label">في إجازة</span>
+                <span class="count">{{ vacation_count|default:"-" }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-card animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
+        
+        <div class="table-toolbar">
+            <h3><i class="fas fa-list-ul"></i> قائمة العمال</h3>
+            
+            <form method="get" class="filters-form">
+                <div class="select-box">
+                    <select name="status" onchange="this.form.submit()">
+                        <option value="">جميع الحالات</option>
+                        <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>على رأس العمل</option>
+                        <option value="vacation" {% if request.GET.status == 'vacation' %}selected{% endif %}>إجازة</option>
+                        <option value="exit_final" {% if request.GET.status == 'exit_final' %}selected{% endif %}>خروج نهائي</option>
+                    </select>
+                    <i class="fas fa-filter"></i>
+                </div>
+
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="q" value="{{ request.GET.q }}" 
+                           placeholder="بحث بالاسم، رقم الإقامة، أو المهنة...">
+                </div>
+                <button type="submit" class="btn-search">بحث</button>
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>الاسم / الإقامة</th>
+                        <th>المهنة</th>
+                        <th>الجنسية</th>
+                        <th>الشركة (المورد)</th>
+                        <th>الحالة</th>
+                        <th>انتهاء الإقامة</th>
+                        <th>التفاصيل</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for worker in page_obj %}
+                    <tr class="animate__animated animate__fadeInUp" style="animation-delay: 0.{{ forloop.counter }}s;">
+                        <td>
+                            <div class="user-cell">
+                                <div class="avatar-circle">{{ worker.full_name|slice:":1" }}</div>
+                                <div class="user-info">
+                                    <span class="name">{{ worker.full_name }}</span>
+                                    <span class="sub-text id-font">{{ worker.iqama_number }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        
+                        <td class="job-cell">{{ worker.job_title }}</td>
+                        
+                        <td>{{ worker.nationality }}</td>
+
+                        <td>
+                            <div class="company-tag">
+                                <i class="far fa-building"></i> {{ worker.vendor.company.name }}
+                            </div>
+                        </td>
+
+                        <td>
+                            {% if worker.status == 'active' %}
+                                <span class="status-badge active"><i class="fas fa-circle"></i> على رأس العمل</span>
+                            {% elif worker.status == 'vacation' %}
+                                <span class="status-badge vacation"><i class="fas fa-plane"></i> إجازة</span>
+                            {% elif worker.status == 'exit_final' %}
+                                <span class="status-badge exit"><i class="fas fa-times"></i> خروج نهائي</span>
+                            {% elif worker.status == 'terminated' %}
+                                <span class="status-badge term"><i class="fas fa-user-slash"></i> منتهي</span>
+                            {% else %}
+                                <span class="status-badge default">{{ worker.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <span class="date-badge {% if worker.is_iqama_expiring_soon %}near-expiry{% endif %}">
+                                {{ worker.iqama_expiry_date|date:"Y-m-d" }}
+                            </span>
+                        </td>
+
+                        <td>
+                            <a href="#" class="btn-icon-view" title="عرض الملف الشخصي">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <i class="fas fa-search-minus"></i>
+                            <p>لا توجد نتائج مطابقة للبحث.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if is_paginated %}
+        <div class="pagination-wrapper">
+            <span class="page-info">
+                عرض الصفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}
+            </span>
+            
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                <li>
+                    <a href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="disabled"><span><i class="fas fa-chevron-right"></i></span></li>
+                {% endif %}
+
+                {% for i in page_obj.paginator.page_range %}
+                    {% if page_obj.number == i %}
+                        <li class="active"><span>{{ i }}</span></li>
+                    {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                        <li><a href="?page={{ i }}&q={{ request.GET.q }}&status={{ request.GET.status }}">{{ i }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li>
+                    <a href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="disabled"><span><i class="fas fa-chevron-left"></i></span></li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+
+    </div>
+
+</section>
+
+<style>
+    /* =========================================
+       Styles specific to Worker List
+       ========================================= */
+    :root {
+        --primary: #10b981;
+        --primary-dark: #059669;
+        --dark: #1e293b;
+        --light-bg: #f8fafc;
+        --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.02);
+    }
+
+    .dashboard-wrapper { direction: rtl; margin-right: 80px; }
+
+    /* Header & Stats (Reused consistent style) */
+    .db-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .header-icon { width: 55px; height: 55px; background: rgba(16, 185, 129, 0.1); color: var(--primary); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+    .db-header h1 { font-size: 24px; font-weight: 800; color: var(--dark); margin: 0; }
+    .db-header p { color: #64748b; margin: 5px 0 0 0; font-size: 14px; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 25px; }
+    .stat-item { background: white; padding: 20px; border-radius: 18px; box-shadow: var(--card-shadow); display: flex; align-items: center; gap: 15px; }
+    .stat-icon { width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .stat-info .count { font-size: 20px; font-weight: 800; color: var(--dark); display: block; }
+    .stat-info .label { font-size: 12px; color: #64748b; }
+    /* Colors */
+    .blue { background: #eff6ff; color: #3b82f6; }
+    .green { background: #f0fdf4; color: #16a34a; }
+    .orange { background: #fff7ed; color: #ea580c; }
+
+    /* Main Card & Toolbar */
+    .data-card { background: white; border-radius: 24px; padding: 25px; box-shadow: var(--card-shadow); border: 1px solid #f1f5f9; }
+    
+    .table-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; }
+    .table-toolbar h3 { margin: 0; font-size: 18px; color: var(--dark); }
+
+    .filters-form { display: flex; gap: 10px; flex: 1; justify-content: flex-end; max-width: 700px; }
+    
+    .search-box { position: relative; flex: 2; }
+    .search-box input { width: 100%; padding: 10px 40px 10px 15px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; outline: none; transition: 0.3s; }
+    .search-box input:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
+    .search-box i { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8; }
+
+    .select-box { position: relative; flex: 1; min-width: 150px; }
+    .select-box select { width: 100%; appearance: none; padding: 10px 35px 10px 10px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; cursor: pointer; outline: none; color: var(--dark); font-weight: 500; }
+    .select-box i { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; }
+
+    .btn-search { background: var(--dark); color: white; border: none; padding: 0 20px; border-radius: 12px; cursor: pointer; transition: 0.3s; }
+    .btn-search:hover { background: var(--primary); }
+
+    /* Table Styles */
+    .modern-table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
+    .modern-table th { text-align: right; color: #94a3b8; font-weight: 500; padding: 10px 15px; font-size: 12px; }
+    .modern-table td { background: #f8fafc; padding: 12px 15px; border: none; vertical-align: middle; transition: 0.2s; }
+    .modern-table tr:hover td { background: #f1f5f9; transform: scale(1.002); box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+    .modern-table tr td:first-child { border-radius: 0 12px 12px 0; }
+    .modern-table tr td:last-child { border-radius: 12px 0 0 12px; }
+
+    /* User Cell */
+    .user-cell { display: flex; align-items: center; gap: 12px; }
+    .avatar-circle { width: 38px; height: 38px; background: #e2e8f0; color: #475569; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; }
+    .user-info .name { display: block; font-weight: bold; color: var(--dark); font-size: 13px; }
+    .user-info .sub-text { font-size: 11px; color: #64748b; font-family: monospace; }
+    
+    .company-tag { color: #64748b; font-size: 12px; display: flex; align-items: center; gap: 5px; }
+    .job-cell { font-weight: 600; color: #334155; font-size: 13px; }
+
+    /* Status Badges */
+    .status-badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px; }
+    .status-badge i { font-size: 6px; }
+    
+    .status-badge.active { background: #dcfce7; color: #166534; }
+    .status-badge.active i { color: #16a34a; }
+    
+    .status-badge.vacation { background: #ffedd5; color: #9a3412; }
+    .status-badge.vacation i { color: #f97316; font-size: 10px; } /* Icon bigger for plane */
+    
+    .status-badge.exit { background: #fee2e2; color: #991b1b; }
+    .status-badge.term { background: #f1f5f9; color: #475569; }
+
+    .date-badge { font-family: monospace; color: #475569; font-weight: 600; font-size: 12px; }
+    .date-badge.near-expiry { color: #dc2626; background: #fee2e2; padding: 2px 6px; border-radius: 4px; }
+
+    /* Buttons */
+    .btn-action { background: var(--dark); color: white; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: bold; display: flex; align-items: center; gap: 8px; transition: 0.3s; font-size: 14px; }
+    .btn-action:hover { background: var(--primary-dark); transform: translateY(-2px); }
+    
+    .btn-icon-view { width: 32px; height: 32px; border-radius: 8px; background: white; border: 1px solid #e2e8f0; color: #64748b; display: flex; align-items: center; justify-content: center; transition: 0.3s; text-decoration: none; }
+    .btn-icon-view:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+    .empty-state { text-align: center; padding: 40px; color: #94a3b8; }
+    .empty-state i { font-size: 40px; margin-bottom: 10px; opacity: 0.5; }
+
+    /* Pagination */
+    .pagination-wrapper { margin-top: 25px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 20px; }
+    .page-info { color: #64748b; font-size: 13px; }
+    .pagination { list-style: none; display: flex; gap: 5px; padding: 0; margin: 0; }
+    .pagination li a, .pagination li span { display: block; width: 32px; height: 32px; line-height: 32px; text-align: center; border-radius: 8px; font-size: 13px; font-weight: bold; text-decoration: none; color: #64748b; background: #f8fafc; transition: 0.2s; }
+    .pagination li a:hover { background: #e2e8f0; color: var(--dark); }
+    .pagination li.active span { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); }
+    .pagination li.disabled span { opacity: 0.5; cursor: not-allowed; }
+
+    /* Animation */
+    .pulse-animation { animation: pulse 2s infinite; }
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    @media (max-width: 768px) {
+        .table-toolbar { flex-direction: column; align-items: stretch; }
+        .filters-form { flex-direction: column; max-width: 100%; }
+        .pagination-wrapper { flex-direction: column; gap: 15px; }
+    }
+</style>
+{% endblock %}
