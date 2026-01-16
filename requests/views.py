@@ -55,7 +55,7 @@ class RequestWizardView(LoginRequiredMixin, TemplateView):
                 fv.save()
 
         messages.info(self.request, "تم حفظ الطلب كمسودة. يرجى مراجعته وإضافة المرفقات ثم الضغط على إرسال.")
-        return redirect('requests:detail', pk=request_obj.pk)
+        return redirect('requests:detail', pk=new_request.pk)
 # ==========================================
 # 2. قائمة الطلبات (List)
 # ==========================================
@@ -71,7 +71,7 @@ class RequestListView(LoginRequiredMixin, ListView):
         if user.company.company_type == 'client':
             return qs.filter(created_by__company=user.company)
         elif user.company.company_type == 'vendor':
-            return qs.filter(worker__vendor__company=user.company)
+            return qs.filter(worker__vendor__company=user.company).exclude(status='draft')
             
         return qs.none()
 
@@ -102,7 +102,7 @@ class RequestDetailView(LoginRequiredMixin, DetailView):
         if user.company.company_type == 'client':
             return qs.filter(created_by__company=user.company)
         elif user.company.company_type == 'vendor':
-            return qs.filter(worker__vendor__company=user.company)
+            return qs.filter(worker__vendor__company=user.company).exclude(status='draft')
             
         return qs.none()
 
@@ -198,6 +198,25 @@ class RequestDetailView(LoginRequiredMixin, DetailView):
         # 3. إجراءات خاصة بالعميل (Client Only)
         # ------------------------------------------------------------------
         elif user.company.company_type == 'client':
+
+            if action == 'confirm_submission' and self.object.status == 'draft':
+                # التحقق النهائي (اختياري: مثلاً هل توجد مرفقات؟)
+                # if not self.object.attachments.exists():
+                #     messages.error(request, "يجب إضافة مرفق واحد على الأقل قبل الإرسال.")
+                #     return redirect(...)
+
+                self.object.status = 'submitted' # تحويل الحالة لمرسل
+                self.object.created_at = timezone.now() # تحديث وقت الإرسال الفعلي
+                self.object.save()
+                
+                messages.success(request, "تم إرسال الطلب للمورد بنجاح!")
+                return redirect('requests:list') # أو البقاء في نفس الصفحة
+
+            # (ب) حذف المسودة (جديد)
+            elif action == 'delete_draft' and self.object.status == 'draft':
+                self.object.delete() # حذف الطلب بالكامل
+                messages.success(request, "تم إلغاء المسودة وحذفها.")
+                return redirect('requests:list') # العودة للقائمة لأن الطلب لم يعد موجوداً
             
             # أ) إعادة الإرسال
             if action == 'resubmit' and self.object.status == 'returned':

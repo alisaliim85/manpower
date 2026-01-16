@@ -2,6 +2,34 @@
 {% block title %}تفاصيل الطلب #{{ req.id }} | مواردي{% endblock %}
 
 {% block content %}
+
+{% if req.status == 'draft' and request.user.company.company_type == 'client' %}
+<div class="draft-action-bar animate__animated animate__fadeInDown">
+    <div class="draft-info">
+        <i class="fas fa-edit text-warning"></i>
+        <span>هذا الطلب في حالة <strong>مسودة</strong>. لن يراه المورد حتى تقوم بإرساله.</span>
+    </div>
+    <div class="draft-buttons">
+        <form method="post" onsubmit="return confirm('هل أنت متأكد من حذف هذه المسودة نهائياً؟');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete_draft">
+            <button type="submit" class="btn-draft-delete">
+                <i class="fas fa-trash-alt"></i> حذف المسودة
+            </button>
+        </form>
+
+        <form method="post" onsubmit="return confirm('سيتم إرسال الطلب للمورد ولا يمكن التعديل عليه بعد ذلك. هل أنت متأكد؟');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="confirm_submission">
+            <button type="submit" class="btn-draft-send pulse-animation">
+                <i class="fas fa-paper-plane"></i> اعتماد وإرسال الطلب
+            </button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+
 <section class="dashboard-wrapper container">
 
     <div class="db-header animate__animated animate__fadeIn">
@@ -426,7 +454,63 @@
         font-size: 16px;
         font-weight: normal;
     }
+.draft-action-bar {
+    background: #fffbeb; /* أصفر فاتح */
+    border: 1px solid #fcd34d;
+    padding: 15px 25px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.1);
+}
 
+.draft-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #92400e;
+}
+
+.draft-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-draft-delete {
+    background: white;
+    border: 1px solid #ef4444;
+    color: #ef4444;
+    padding: 8px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.btn-draft-delete:hover {
+    background: #fee2e2;
+}
+
+.btn-draft-send {
+    background: #10b981; /* أخضر */
+    border: none;
+    color: white;
+    padding: 8px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: 0.3s;
+}
+
+.btn-draft-send:hover {
+    background: #059669;
+    transform: translateY(-2px);
+}
     .date-text {
         color: #94a3b8;
         font-weight: bold;
