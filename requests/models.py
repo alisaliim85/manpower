@@ -140,6 +140,7 @@ class Request(models.Model):
         ("draft", "مسودة"),
         ("submitted", "مرسل"),
         ("in_progress", "قيد المعالجة"),
+        ("returned", "معاد (لوجود نقص)"),
         ("completed", "مكتمل"),
         ("rejected", "مرفوض"),
         ("cancelled", "ملغي"),
@@ -213,6 +214,8 @@ class Request(models.Model):
         blank=True,
         verbose_name="ملاحظة الإغلاق"
     )
+
+    return_reason = models.TextField(blank=True, null=True, verbose_name="سبب الإعادة/النقص")
 
     closed_by = models.ForeignKey(
         User,

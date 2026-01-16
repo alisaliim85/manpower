@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,8 +8,8 @@
     <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet"> -->
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+
     <style>
         :root {
             --primary: #10b981;
@@ -31,18 +32,23 @@
             max-width: 1200px;
             margin: auto;
         }
+
         .has-sidebar main {
-            margin-right: 200px; /* نفس عرض السايد بار */
+            margin-right: 200px;
+            /* نفس عرض السايد بار */
             transition: padding-right 0.4s ease;
         }
+
         .sidebar-is-closed main {
             margin-right: 0;
         }
+
         @media (max-width: 768px) {
             .has-sidebar main {
                 margin-right: 0;
             }
         }
+
         main {
             min-height: calc(100vh - 160px);
             padding: 40px 0;
@@ -58,15 +64,132 @@
             align-items: center;
             gap: 5px;
         }
-        .pending-light { background: #fef3c7; color: #92400e; }
-        .approved-light { background: #dcfce7; color: #15803d; }
+
+        .pending-light {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .approved-light {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        /* حاوية الرسائل تثبت في أعلى الشاشة */
+        .messages-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        /* تصميم الرسالة نفسها */
+        .toast-message {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            border-radius: 12px;
+            background: white;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            border-left: 5px solid #ccc;
+            direction: rtl;
+            font-family: inherit;
+        }
+
+        .toast-message .icon {
+            margin-left: 15px;
+            font-size: 20px;
+        }
+
+        .toast-message .content {
+            flex-grow: 1;
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .toast-message .close-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        /* ألوان حسب نوع الرسالة */
+        .toast-message.success {
+            border-left-color: #10b981;
+        }
+
+        .toast-message.success .icon {
+            color: #10b981;
+        }
+
+        .toast-message.error {
+            border-left-color: #ef4444;
+        }
+
+        .toast-message.error .icon {
+            color: #ef4444;
+        }
+
+        .toast-message.warning {
+            border-left-color: #f59e0b;
+        }
+
+        .toast-message.warning .icon {
+            color: #f59e0b;
+        }
+
+        .toast-message.info {
+            border-left-color: #3b82f6;
+        }
+
+        .toast-message.info .icon {
+            color: #3b82f6;
+        }
     </style>
 </head>
+
 <body class="{% if user.is_authenticated %}has-sidebar{% endif %}" id="bodyTag">
 
+    {% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+        <div class="toast-message animate__animated animate__fadeInDown {{ message.tags }}">
+            <div class="icon">
+                {% if 'success' in message.tags %} <i class="fas fa-check-circle"></i>
+                {% elif 'error' in message.tags %} <i class="fas fa-times-circle"></i>
+                {% elif 'warning' in message.tags %} <i class="fas fa-exclamation-triangle"></i>
+                {% else %} <i class="fas fa-info-circle"></i>
+                {% endif %}
+            </div>
+            <div class="content">
+                {{ message }}
+            </div>
+            <button class="close-btn" onclick="this.parentElement.remove()">&times;</button>
+        </div>
+        {% endfor %}
+    </div>
+    <script>
+        setTimeout(function () {
+            const messages = document.querySelectorAll('.toast-message');
+            messages.forEach(msg => {
+                msg.classList.replace('animate__fadeInDown', 'animate__fadeOutUp');
+                setTimeout(() => msg.remove(), 1000);
+            });
+        }, 5000); // تختفي بعد 5000 ملي ثانية (5 ثواني)
+    </script>
+    {% endif %}
     {% include "layout/header.html" %}
     {% if user.is_authenticated %}
-        {% include "layout/sidebar.html" %}
+    {% include "layout/sidebar.html" %}
     {% endif %}
 
     <main class="animate__animated animate__fadeIn">
@@ -77,13 +200,13 @@
 
     {% include "layout/footer.html" %}
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const sidebar = document.getElementById('sidebar');
             const bodyTag = document.getElementById('bodyTag');
             const closeBtn = document.getElementById('closeSidebar');
             const openBtn = document.getElementById('openSidebar');
 
-            if(closeBtn && openBtn) {
+            if (closeBtn && openBtn) {
                 closeBtn.addEventListener('click', () => {
                     bodyTag.classList.add('sidebar-is-closed');
                 });
@@ -95,4 +218,5 @@
         });
     </script>
 </body>
+
 </html>

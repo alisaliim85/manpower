@@ -1,0 +1,726 @@
+{% extends "layout/index.html" %}
+{% block title %}تفاصيل الطلب #{{ req.id }} | مواردي{% endblock %}
+
+{% block content %}
+<section class="dashboard-wrapper container">
+
+    <div class="db-header animate__animated animate__fadeIn">
+        <div class="welcome-text">
+            <div class="header-icon">
+                <i class="fas fa-file-contract"></i>
+            </div>
+            <div>
+                <h1>{{ req.request_type.name }} <span class="id-badge">#{{ req.id }}</span></h1>
+                <p>تاريخ الإنشاء: <span class="date-text">{{ req.created_at|date:"Y-m-d h:i A" }}</span></p>
+            </div>
+        </div>
+        
+
+        <div class="header-actions">
+            <div class="status-badge-lg {{ req.status }}">
+                {% if req.status == 'submitted' %}<i class="fas fa-paper-plane"></i> طلب جديد (مرسل)
+                {% elif req.status == 'in_progress' %}<i class="fas fa-cogs"></i> قيد المعالجة
+                {% elif req.status == 'returned' %}<i class="fas fa-cogs"></i> معاد (لوجود نقص)
+                {% elif req.status == 'completed' %}<i class="fas fa-check-circle"></i> مكتمل
+                {% elif req.status == 'rejected' %}<i class="fas fa-times-circle"></i> مرفوض
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% if request.user.company.company_type == 'vendor' or request.user.is_superuser %}
+    <div class="actions-bar animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
+        <div class="action-instructions">
+            <i class="fas fa-info-circle"></i> يمكنك اتخاذ الإجراء المناسب لهذا الطلب الآن.
+        </div>
+
+        <div class="buttons-group">
+            {% if request.user.company.company_type == 'vendor' %}
+            {% if req.status == 'submitted' %}
+            <form method="post">{% csrf_token %}
+                <button type="submit" name="action" value="start_processing" class="btn-action start pulse-animation">
+                    <i class="fas fa-play"></i> ابدأ المعالجة
+                </button>
+            </form>
+            {% elif req.status == 'in_progress' %}
+            <button onclick="openCompleteModal()" class="btn-action complete">
+                <i class="fas fa-check-double"></i> إكمال الطلب
+            </button>
+            <button onclick="openReturnModal()" class="btn-action return warning-btn">
+                <i class="fas fa-undo"></i> وجود نقص/إعادة
+            </button>
+
+            <button onclick="openRejectModal()" class="btn-action reject">
+                <i class="fas fa-times"></i> رفض نهائي
+            </button>
+
+            {% endif %}
+            {% elif request.user.company.company_type == 'client' %}
+
+            {% if req.status == 'returned' %}
+            <div class="alert-box warning animate__animated animate__pulse">
+                <strong><i class="fas fa-exclamation-circle"></i> ملاحظة المورد:</strong>
+                {{ req.return_reason }}
+            </div>
+
+            <form method="post" style="margin-top: 15px;">{% csrf_token %}
+                <button type="submit" name="action" value="resubmit" class="btn-action resubmit pulse-animation">
+                    <i class="fas fa-paper-plane"></i> إعادة إرسال الطلب
+                </button>
+            </form>
+            {% endif %}
+
+            {% endif %}
+
+            <a href="{% url 'requests:list' %}" class="btn-secondary">عودة للقائمة</a>
+        </div>
+        
+    </div>
+    {% endif %}
+
+    <div class="detail-grid">
+
+        <div class="data-card animate__animated animate__fadeInUp" style="animation-delay: 0.1s;">
+            <div class="card-header-simple">
+                <h3><i class="fas fa-user-tie"></i> بيانات العامل</h3>
+            </div>
+
+            <div class="worker-profile">
+                <div class="avatar-large">{{ req.worker.full_name|slice:":1" }}</div>
+                <h4 class="worker-name">{{ req.worker.full_name }}</h4>
+                <span class="worker-role">{{ req.worker.job_title }}</span>
+            </div>
+
+            <div class="info-list">
+                <div class="info-item">
+                    <span class="label">رقم الإقامة</span>
+                    <span class="value">{{ req.worker.iqama_number }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">الجنسية</span>
+                    <span class="value">{{ req.worker.nationality }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">الشركة التابعة</span>
+                    <span class="value">{{ req.worker.vendor.company.name }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="data-card animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+            <div class="card-header-simple">
+                <h3><i class="fas fa-clipboard-list"></i> تفاصيل ومحتوى الطلب</h3>
+            </div>
+
+            {% if req.status == 'rejected' and req.rejection_reason %}
+            <div class="rejection-alert animate__animated animate__shakeX">
+                <div class="icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="content">
+                    <strong>سبب الرفض:</strong>
+                    <p>{{ req.rejection_reason }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="dynamic-fields-grid">
+                {% if req.title %}
+                <div class="field-box full-width">
+                    <span class="f-label">العنوان / الموضوع</span>
+                    <span class="f-value">{{ req.title }}</span>
+                </div>
+                {% endif %}
+
+                {% if req.notes %}
+                <div class="field-box full-width">
+                    <span class="f-label">ملاحظات إضافية</span>
+                    <span class="f-value">{{ req.notes }}</span>
+                </div>
+                {% endif %}
+
+                {% for val in dynamic_values %}
+                <div class="field-box">
+                    <span class="f-label">{{ val.field.label }}</span>
+                    <span class="f-value">
+                        {% if val.field.field_type == 'bool' %}
+                        {% if val.value_bool %} <span class="tag-yes">نعم</span> {% else %} <span
+                            class="tag-no">لا</span> {% endif %}
+                        {% elif val.field.field_type == 'date' %}
+                        {{ val.value_date|date:"Y-m-d" }}
+                        {% else %}
+                        {{ val.value_text|default:"-" }}
+                        {% endif %}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    
+</section>
+
+<div id="rejectModal" class="modal-overlay">
+    <div class="modal-content animate__animated animate__zoomIn">
+        <div class="modal-header">
+            <h3><i class="fas fa-times-circle text-danger"></i> رفض الطلب</h3>
+            <button onclick="closeRejectModal()" class="close-btn">&times;</button>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="reject">
+
+            <div class="modal-body">
+                <p>هل أنت متأكد من رغبتك في رفض هذا الطلب؟ يرجى ذكر السبب بوضوح للعميل.</p>
+                <div class="form-group">
+                    <label>سبب الرفض <span class="text-danger">*</span></label>
+                    <textarea name="rejection_reason" rows="4" required
+                        placeholder="مثال: عدم توفر العامل حالياً، أو نقص في البيانات..."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" onclick="closeRejectModal()" class="btn-secondary">إلغاء</button>
+                <button type="submit" class="btn-action reject">تأكيد الرفض</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div id="returnModal" class="modal-overlay">
+            <div class="modal-content animate__animated animate__zoomIn">
+                <div class="modal-header">
+                    <h3><i class="fas fa-undo text-warning"></i> إعادة الطلب (وجود نقص)</h3>
+                    <button onclick="closeReturnModal()" class="close-btn">&times;</button>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="return_defect">
+                    <div class="modal-body">
+                        <p>سيتم إعادة الطلب للعميل لتصحيح البيانات أو إرفاق نواقص.</p>
+                        <div class="form-group">
+                            <label>ما هو النقص الموجود؟ <span class="text-danger">*</span></label>
+                            <textarea name="return_reason" rows="3" required
+                                placeholder="مثال: صورة الإقامة غير واضحة، الرجاء إعادة إرفاقها..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" onclick="closeReturnModal()" class="btn-secondary">إلغاء</button>
+                        <button type="submit" class="btn-action warning-btn">إعادة للعميل</button>
+                    </div>
+                </form>
+            </div>
+</div>
+
+<script>
+    function openRejectModal() {
+        document.getElementById('rejectModal').classList.add('active');
+    }
+    function closeRejectModal() {
+        document.getElementById('rejectModal').classList.remove('active');
+    }
+    // Functions for Return Modal
+    function openReturnModal() { document.getElementById('returnModal').classList.add('active'); }
+    function closeReturnModal() { document.getElementById('returnModal').classList.remove('active'); }
+    // إغلاق المودال عند الضغط خارج الصندوق
+    window.onclick = function (event) {
+        let modal = document.getElementById('rejectModal');
+        if (event.target == modal) {
+            closeRejectModal();
+        }
+    }
+</script>
+
+<style>
+    /* =========================================
+       Page Specific Styles
+       ========================================= */
+    :root {
+        --primary: #10b981;
+        --primary-dark: #059669;
+        --dark: #1e293b;
+        --danger: #ef4444;
+        --warning: #f59e0b;
+        --success: #10b981;
+        --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.02);
+    }
+
+    .dashboard-wrapper {
+        direction: rtl;
+        margin-right: 80px;
+        padding-bottom: 50px;
+    }
+
+    /* Header Styling */
+    .db-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .welcome-text {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .header-icon {
+        width: 55px;
+        height: 55px;
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--primary);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+
+    .db-header h1 {
+        font-size: 24px;
+        font-weight: 800;
+        color: var(--dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .id-badge {
+        background: #e2e8f0;
+        color: #64748b;
+        padding: 2px 10px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: normal;
+    }
+
+    .date-text {
+        color: #94a3b8;
+        font-weight: bold;
+        font-family: sans-serif;
+    }
+
+    /* Layout Grid */
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 25px;
+        align-items: start;
+    }
+
+    /* Cards */
+    .data-card {
+        background: white;
+        border-radius: 24px;
+        padding: 25px;
+        box-shadow: var(--card-shadow);
+        border: 1px solid #f1f5f9;
+    }
+
+    .card-header-simple {
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+    }
+
+    .card-header-simple h3 {
+        margin: 0;
+        font-size: 16px;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Worker Profile */
+    .worker-profile {
+        text-align: center;
+        padding-bottom: 20px;
+        border-bottom: 1px dashed #e2e8f0;
+        margin-bottom: 20px;
+    }
+
+    .avatar-large {
+        width: 80px;
+        height: 80px;
+        background: #e0f2fe;
+        color: #0369a1;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 30px;
+        font-weight: bold;
+        margin: 0 auto 15px;
+        border: 4px solid #f0f9ff;
+    }
+
+    .worker-name {
+        margin: 0;
+        color: var(--dark);
+        font-size: 18px;
+        font-weight: 800;
+    }
+
+    .worker-role {
+        color: #64748b;
+        font-size: 14px;
+    }
+
+    /* Info List */
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #f8fafc;
+    }
+
+    .info-item:last-child {
+        border-bottom: none;
+    }
+
+    .info-item .label {
+        color: #94a3b8;
+        font-size: 13px;
+    }
+
+    .info-item .value {
+        font-weight: bold;
+        color: var(--dark);
+        font-size: 14px;
+    }
+
+    /* Dynamic Fields Grid */
+    .dynamic-fields-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+    }
+
+    .field-box {
+        background: #f8fafc;
+        padding: 15px;
+        border-radius: 12px;
+        border: 1px solid #f1f5f9;
+    }
+
+    .full-width {
+        grid-column: 1 / -1;
+    }
+
+    .f-label {
+        display: block;
+        color: #94a3b8;
+        font-size: 12px;
+        margin-bottom: 6px;
+    }
+
+    .f-value {
+        display: block;
+        color: var(--dark);
+        font-weight: bold;
+        font-size: 15px;
+        line-height: 1.5;
+    }
+
+    /* Status Badges */
+    .status-badge-lg {
+        padding: 10px 20px;
+        border-radius: 12px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .status-badge-lg.submitted {
+        background: #fff7ed;
+        color: #ea580c;
+        border: 1px solid #ffedd5;
+    }
+
+    .status-badge-lg.in_progress {
+        background: #eff6ff;
+        color: #2563eb;
+        border: 1px solid #dbeafe;
+    }
+    .status-badge-lg.returned {
+        background: #fccf55;
+        color: #161405;
+        border: 1px solid #dbeafe;
+    }
+    .status-badge-lg.completed {
+        background: #f0fdf4;
+        color: #16a34a;
+        border: 1px solid #dcfce7;
+    }
+
+    .status-badge-lg.rejected {
+        background: #fef2f2;
+        color: #ef4444;
+        border: 1px solid #fee2e2;
+    }
+
+    /* Rejection Alert */
+    .rejection-alert {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 12px;
+        padding: 15px;
+        display: flex;
+        gap: 15px;
+        margin-bottom: 25px;
+        color: #991b1b;
+    }
+
+    .rejection-alert .icon {
+        font-size: 20px;
+    }
+
+    .rejection-alert p {
+        margin: 5px 0 0 0;
+        color: #7f1d1d;
+    }
+
+    /* Action Bar (Sticky Bottom Style) */
+    .actions-bar {
+        margin-top: 30px;
+        background: white;
+        padding: 20px 30px;
+        border-radius: 20px;
+        box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.03);
+        border: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .action-instructions {
+        color: #64748b;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .buttons-group {
+        display: flex;
+        gap: 15px;
+    }
+
+    /* Buttons */
+    .btn-action {
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: white;
+        transition: 0.3s;
+        font-size: 14px;
+    }
+    .btn-action.start { background: #3b82f6; } /* أزرق */
+    .btn-action.start:hover { background: #2563eb; }
+
+    .btn-action.resubmit { background: #10b981; } /* أخضر */
+    
+    .btn-action.warning-btn { background: #f59e0b; color: white; border: none; } /* برتقالي */
+    .btn-action.warning-btn:hover { background: #d97706; transform: translateY(-3px); }
+
+    .alert-box.warning {
+        background: #fffbeb; border: 1px solid #fcd34d; color: #92400e;
+        padding: 15px; border-radius: 12px; margin-bottom: 20px; display: block; width: 100%;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-3px);
+    }
+
+    .btn-action.approve {
+        background: var(--primary);
+    }
+
+    .btn-action.approve:hover {
+        background: var(--primary-dark);
+    }
+
+    .btn-action.complete {
+        background: #3b82f6;
+    }
+
+    .btn-action.complete:hover {
+        background: #2563eb;
+    }
+
+    .btn-action.reject {
+        background: white;
+        color: var(--danger);
+        border: 1px solid #fee2e2;
+    }
+
+    .btn-action.reject:hover {
+        background: var(--danger);
+        color: white;
+        border-color: var(--danger);
+    }
+
+    .btn-secondary {
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 12px 20px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: 0.2s;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .btn-secondary:hover {
+        background: #e2e8f0;
+        color: var(--dark);
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(5px);
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background: white;
+        width: 500px;
+        max-width: 90%;
+        border-radius: 24px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+    }
+
+    .modal-header {
+        padding: 20px 25px;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        font-size: 18px;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #94a3b8;
+    }
+
+    .modal-body {
+        padding: 25px;
+    }
+
+    .modal-body p {
+        color: #64748b;
+        margin-bottom: 20px;
+        font-size: 14px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+        color: var(--dark);
+        font-size: 13px;
+    }
+
+    .form-group textarea {
+        width: 100%;
+        padding: 15px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        resize: vertical;
+        outline: none;
+        transition: 0.3s;
+        font-family: inherit;
+    }
+
+    .form-group textarea:focus {
+        border-color: var(--danger);
+        background: #fef2f2;
+    }
+
+    .modal-footer {
+        padding: 20px 25px;
+        background: #f8fafc;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    /* Pulse Animation */
+    .pulse-animation {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+        }
+
+        70% {
+            box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+        }
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .actions-bar {
+            flex-direction: column;
+            gap: 20px;
+            align-items: stretch;
+        }
+
+        .buttons-group {
+            flex-direction: column;
+        }
+
+        .btn-action {
+            justify-content: center;
+        }
+
+        .btn-secondary {
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
