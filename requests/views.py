@@ -7,6 +7,7 @@ from vendors.models import Worker
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Q
+from notifications.models import Notification
 
 # ==========================================
 # 1. إنشاء الطلب (Wizard)
@@ -86,6 +87,18 @@ class RequestListView(LoginRequiredMixin, ListView):
         context['rejected_count'] = qs.filter(status='rejected').count()
         
         return context
+
+
+def create_notification(user, request_obj, title, message):
+    if user:
+        Notification.objects.create(
+            recipient=user,
+            request=request_obj,
+            title=title,
+            message=message
+        )
+
+
 
 # ==========================================
 # 3. تفاصيل الطلب (Detail) - تم التصحيح
@@ -175,6 +188,13 @@ class RequestDetailView(LoginRequiredMixin, DetailView):
                 # تسجيل الحركة
                 self.log_timeline("بدء المعالجة", "بدأ المورد في معالجة الطلب", current_status, 'in_progress')
                 messages.success(request, "تم بدء معالجة الطلب.")
+                #ارسال الاشعارات
+                create_notification(
+                    user=self.object.created_by,
+                    request_obj=self.object,
+                    title="الطلب قيد المعالجة",
+                    message=f"قام المورد {user.company.name} ببدء العمل على طلبك."
+                )
 
             elif action == 'return_defect' and self.object.status == 'in_progress':
                 reason = request.POST.get('return_reason')
@@ -185,6 +205,13 @@ class RequestDetailView(LoginRequiredMixin, DetailView):
                     # تسجيل الحركة
                     self.log_timeline("إعادة الطلب (نواقص)", f"السبب: {reason}", current_status, 'returned')
                     messages.warning(request, "تم إعادة الطلب للعميل لاستكمال النواقص.")
+                #ارسال الاشعارات
+                    create_notification(
+                    user=self.object.created_by,
+                    request_obj=self.object,
+                    title="تنبيه: يوجد نقص في الطلب",
+                    message=f"أعاد المورد الطلب لوجود ملاحظات: {reason}"
+                )
                 else:
                     messages.error(request, "يجب ذكر سبب الإعادة.")
 
@@ -202,6 +229,13 @@ class RequestDetailView(LoginRequiredMixin, DetailView):
                 # تسجيل الحركة
                 self.log_timeline("رفض الطلب", f"سبب الرفض: {reason}", current_status, 'rejected')
                 messages.error(request, "تم رفض الطلب وإغلاقه.")
+                #ارسال الاشعارات
+                create_notification(
+                    user=self.object.created_by,
+                    request_obj=self.object,
+                    title="الطلب مرفوض",
+                    message=f"قام المورد برفض الطلب لوجود ملاحظات: {reason}"
+                    )
 
             elif action == 'complete':
                 note = request.POST.get('closure_note')
@@ -232,6 +266,29 @@ class RequestDetailView(LoginRequiredMixin, DetailView):
                 # تسجيل الحركة (الأهم)
                 self.log_timeline("إنشاء وإرسال الطلب", "تم اعتماد المسودة وإرسالها للمورد", 'draft', 'submitted')
                 messages.success(request, "تم إرسال الطلب للمورد بنجاح!")
+                #ارسال الاشعارات
+                vendor_profile = self.object.worker.vendor
+                # 1. الوصول لبروفايل المورد المرتبط بالعامل
+                vendor_profile = self.object.worker.vendor
+                
+                # 2. جلب جميع موظفي الشركة
+                staff_members = vendor_profile.get_all_staff
+
+                # 3. حلقة تكرار لإرسال الإشعار لكل واحد منهم
+                count_sent = 0
+                for staff in staff_members:
+                    # نتأكد أن الموظف نشط (اختياري)
+                    if staff.is_active:
+                        create_notification(
+                            user=staff,
+                            request_obj=self.object,
+                            title="طلب جديد وارد 🔔",
+                            message=f"قام {user.company.name} بإرسال طلب جديد #{self.object.id} للعامل {self.object.worker.full_name}"
+                        )
+                        count_sent += 1
+                
+
+
                 return redirect('requests:list') # أو البقاء في نفس الصفحة
 
             # (ب) حذف المسودة (جديد)

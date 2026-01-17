@@ -31,6 +31,19 @@ class Vendor(models.Model):
         verbose_name='نشطة'
     )
 
+    @property
+    def get_all_staff(self):
+        """
+        جلب جميع المستخدمين المرتبطين بشركة التوريد هذه.
+        يعتمد على العلاقة العكسية من مودل Company إلى User.
+        """
+        # عادة العلاقة العكسية تكون user_set إلا إذا قمت بتغيير related_name في مودل User
+        if hasattr(self.company, 'users'): 
+            return self.company.users.all()
+        elif hasattr(self.company, 'user_set'):
+            return self.company.user_set.all()
+        return []
+
     def __str__(self):
         return self.company.name
 

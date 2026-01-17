@@ -1,0 +1,482 @@
+{% extends "layout/index.html" %}
+{% block title %}مركز الإشعارات | مواردي{% endblock %}
+
+{% block content %}
+<section class="dashboard-wrapper container">
+
+    <div class="db-header animate__animated animate__fadeIn">
+        <div class="welcome-text">
+            <div class="header-icon">
+                <i class="fas fa-bell"></i>
+            </div>
+            <div>
+                <h1>مركز الإشعارات</h1>
+                <p>إدارة ومتابعة جميع التنبيهات والرسائل الواردة</p>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <form method="post" action="{% url 'notifications:mark_all_read' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-action pulse-animation">
+                    <i class="fas fa-check-double"></i> تحديد الكل كمقروء
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="data-card animate__animated animate__fadeInUp" style="animation-delay: 0.1s;">
+        <form method="get" class="search-form">
+            <div class="search-group">
+                <input type="text" name="q" value="{{ request.GET.q }}" placeholder="بحث في عنوان أو نص الإشعار..." class="search-input">
+                <button type="submit" class="search-btn"><i class="fas fa-search"></i></button>
+            </div>
+            
+            <div class="filter-group">
+                <select name="filter" class="filter-select" onchange="this.form.submit()">
+                    <option value="all" {% if request.GET.filter == 'all' %}selected{% endif %}>عرض الكل</option>
+                    <option value="unread" {% if request.GET.filter == 'unread' %}selected{% endif %}>غير المقروءة</option>
+                    <option value="read" {% if request.GET.filter == 'read' %}selected{% endif %}>المقروءة فقط</option>
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <div class="data-card animate__animated animate__fadeInUp" style="margin-top: 25px; animation-delay: 0.2s;">
+        <div class="table-responsive">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th width="5%">الحالة</th>
+                        <th width="55%">تفاصيل الإشعار</th>
+                        <th width="20%">النوع</th>
+                        <th width="15%">التوقيت</th>
+                        <th width="5%">إجراء</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for notif in page_obj %}
+                    <tr class="{% if not notif.is_read %}unread-row{% endif %}">
+                        <td class="text-center">
+                            {% if not notif.is_read %}
+                                <div class="status-dot unread" title="جديد"></div>
+                            {% else %}
+                                <div class="status-dot read" title="مقرؤء"></div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="notif-content">
+                                <span class="notif-title">{{ notif.title }}</span>
+                                <p class="notif-desc">{{ notif.message|truncatechars:80 }}</p>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge-type">
+                                <i class="fas fa-info-circle"></i> عام
+                            </span>
+                        </td>
+                        <td>
+                            <span class="time-text">{{ notif.created_at|date:"Y-m-d h:i A" }}</span>
+                            <span class="time-ago">{{ notif.created_at|timesince }}</span>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="{% url 'notifications:mark_read' notif.id %}" class="btn-icon view" title="عرض">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="empty-state">
+                            <i class="far fa-bell-slash"></i>
+                            <p>لا توجد إشعارات تطابق بحثك</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj.has_other_pages %}
+        <div class="pagination-wrapper">
+            <div class="pagination-info">
+                عرض {{ page_obj.start_index }} إلى {{ page_obj.end_index }} من أصل {{ page_obj.paginator.count }} إشعار
+            </div>
+            <div class="pagination-controls">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="page-link prev"><i class="fas fa-chevron-right"></i></a>
+                {% else %}
+                    <span class="page-link disabled"><i class="fas fa-chevron-right"></i></span>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <span class="page-link active">{{ num }}</span>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <a href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="page-link">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="page-link next"><i class="fas fa-chevron-left"></i></a>
+                {% else %}
+                    <span class="page-link disabled"><i class="fas fa-chevron-left"></i></span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</section>
+
+<style>
+    /* --- Core Variables & Global --- */
+    :root {
+        --primary: #10b981;
+        --primary-dark: #059669;
+        --secondary: #3b82f6;
+        --dark: #1e293b;
+        --text-muted: #64748b;
+        --light-bg: #f8fafc;
+        --border: #e2e8f0;
+        --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.02);
+    }
+
+    .dashboard-wrapper {
+        direction: rtl;
+        padding-bottom: 60px;
+    }
+
+    /* --- Headers --- */
+    .db-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .welcome-text {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .header-icon {
+        width: 55px;
+        height: 55px;
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--primary);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+
+    .db-header h1 {
+        font-size: 24px;
+        font-weight: 800;
+        color: var(--dark);
+        margin: 0 0 5px 0;
+    }
+
+    .db-header p {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 14px;
+    }
+
+    /* --- Buttons & Actions --- */
+    .btn-action {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 12px;
+        font-weight: bold;
+        font-size: 14px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: 0.3s;
+        text-decoration: none;
+    }
+
+    .btn-action:hover {
+        background: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(16, 185, 129, 0.2);
+    }
+
+    /* Pulse Animation for Primary Action */
+    .pulse-animation {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* --- Data Cards --- */
+    .data-card {
+        background: white;
+        border-radius: 24px;
+        padding: 25px;
+        box-shadow: var(--card-shadow);
+        border: 1px solid var(--border);
+    }
+
+    /* --- Search & Filter Form --- */
+    .search-form {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .search-group {
+        flex: 1;
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 12px 45px 12px 15px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        font-family: inherit;
+        outline: none;
+        transition: 0.3s;
+        background: var(--light-bg);
+    }
+
+    .search-input:focus {
+        border-color: var(--primary);
+        background: white;
+    }
+
+    .search-btn {
+        position: absolute;
+        right: 15px;
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+    }
+
+    .filter-select {
+        padding: 12px 20px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: white;
+        font-family: inherit;
+        outline: none;
+        cursor: pointer;
+        color: var(--dark);
+    }
+
+    /* --- Modern Table --- */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .modern-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 10px; /* Space between rows */
+    }
+
+    .modern-table thead th {
+        color: var(--text-muted);
+        font-weight: 600;
+        padding: 10px 15px;
+        font-size: 13px;
+        text-align: right;
+    }
+
+    .modern-table tbody tr {
+        background: white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        transition: 0.3s;
+    }
+
+    .modern-table tbody tr:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+
+    .modern-table td {
+        padding: 15px;
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
+    }
+
+    /* Rounded Corners for Rows */
+    .modern-table td:first-child {
+        border-right: 1px solid var(--border);
+        border-top-right-radius: 12px;
+        border-bottom-right-radius: 12px;
+    }
+
+    .modern-table td:last-child {
+        border-left: 1px solid var(--border);
+        border-top-left-radius: 12px;
+        border-bottom-left-radius: 12px;
+    }
+
+    /* Notification Content Styling */
+    .unread-row {
+        background: #f0fdf4 !important; /* Light green tint */
+    }
+
+    .unread-row td {
+        border-color: #dcfce7;
+    }
+
+    .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin: auto;
+    }
+
+    .status-dot.unread { background: var(--primary); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2); }
+    .status-dot.read { background: #cbd5e1; }
+
+    .notif-title {
+        display: block;
+        font-weight: 800;
+        color: var(--dark);
+        margin-bottom: 4px;
+    }
+    .unread-row .notif-title { color: var(--primary-dark); }
+
+    .notif-desc {
+        color: var(--text-muted);
+        font-size: 13px;
+        margin: 0;
+    }
+
+    .badge-type {
+        background: var(--light-bg);
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        color: var(--text-muted);
+        border: 1px solid var(--border);
+    }
+
+    .time-text {
+        display: block;
+        font-size: 12px;
+        font-weight: bold;
+        color: var(--dark);
+    }
+
+    .time-ago {
+        display: block;
+        font-size: 11px;
+        color: var(--text-muted);
+    }
+
+    .btn-icon {
+        width: 35px;
+        height: 35px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: 0.2s;
+        text-decoration: none;
+    }
+
+    .btn-icon.view { background: #e0f2fe; color: #0284c7; }
+    .btn-icon.view:hover { background: #0284c7; color: white; }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-muted);
+    }
+    .empty-state i {
+        font-size: 40px;
+        margin-bottom: 15px;
+        opacity: 0.5;
+        display: block;
+    }
+
+    /* --- Pagination --- */
+    .pagination-wrapper {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .pagination-info {
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+
+    .pagination-controls {
+        display: flex;
+        gap: 5px;
+    }
+
+    .page-link {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        color: var(--dark);
+        text-decoration: none;
+        font-size: 13px;
+        transition: 0.2s;
+        cursor: pointer;
+    }
+
+    .page-link:hover {
+        background: var(--light-bg);
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+
+    .page-link.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+
+    .page-link.disabled {
+        background: var(--light-bg);
+        color: #cbd5e1;
+        cursor: not-allowed;
+        border-color: var(--border);
+    }
+
+    /* Mobile Tweaks */
+    @media (max-width: 768px) {
+        .db-header { flex-direction: column; align-items: flex-start; }
+        .header-actions { width: 100%; }
+        .btn-action { width: 100%; justify-content: center; }
+        .search-form { flex-direction: column; }
+        .pagination-wrapper { justify-content: center; }
+    }
+</style>
+{% endblock %}
