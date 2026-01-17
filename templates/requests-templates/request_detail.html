@@ -29,7 +29,6 @@
 </div>
 {% endif %}
 
-
 <section class="dashboard-wrapper container">
 
     <div class="db-header animate__animated animate__fadeIn">
@@ -50,12 +49,13 @@
                 {% elif req.status == 'returned' %}<i class="fas fa-undo"></i> معاد (لوجود نقص)
                 {% elif req.status == 'completed' %}<i class="fas fa-check-circle"></i> مكتمل
                 {% elif req.status == 'rejected' %}<i class="fas fa-times-circle"></i> مرفوض
+                {% elif req.status == 'draft' %}<i class="fas fa-pencil-alt"></i> مسودة
                 {% endif %}
             </div>
         </div>
     </div>
 
-    {% if req.status != 'completed' and req.status != 'rejected' %}
+    {% if req.status != 'completed' and req.status != 'rejected' and req.status != 'draft' %}
     <div class="actions-bar animate__animated animate__fadeInUp" style="animation-delay: 0.1s;">
         <div class="action-instructions">
             <i class="fas fa-info-circle"></i>
@@ -68,32 +68,32 @@
 
         <div class="buttons-group">
             {% if request.user.company.company_type == 'vendor' %}
-            {% if req.status == 'submitted' %}
-            <form method="post">{% csrf_token %}
-                <button type="submit" name="action" value="start_processing" class="btn-action start pulse-animation">
-                    <i class="fas fa-play"></i> ابدأ المعالجة
+                {% if req.status == 'submitted' %}
+                <form method="post">{% csrf_token %}
+                    <button type="submit" name="action" value="start_processing" class="btn-action start pulse-animation">
+                        <i class="fas fa-play"></i> ابدأ المعالجة
+                    </button>
+                </form>
+                {% elif req.status == 'in_progress' %}
+                <button onclick="openCompleteModal()" class="btn-action complete">
+                    <i class="fas fa-check-double"></i> إكمال الطلب
                 </button>
-            </form>
-            {% elif req.status == 'in_progress' %}
-            <button onclick="openCompleteModal()" class="btn-action complete">
-                <i class="fas fa-check-double"></i> إكمال الطلب
-            </button>
-            <button onclick="openReturnModal()" class="btn-action return warning-btn">
-                <i class="fas fa-undo"></i> وجود نقص/إعادة
-            </button>
-            <button onclick="openRejectModal()" class="btn-action reject">
-                <i class="fas fa-times"></i> رفض نهائي
-            </button>
-            {% endif %}
+                <button onclick="openReturnModal()" class="btn-action return warning-btn">
+                    <i class="fas fa-undo"></i> وجود نقص/إعادة
+                </button>
+                <button onclick="openRejectModal()" class="btn-action reject">
+                    <i class="fas fa-times"></i> رفض نهائي
+                </button>
+                {% endif %}
 
             {% elif request.user.company.company_type == 'client' %}
-            {% if req.status == 'returned' %}
-            <form method="post">{% csrf_token %}
-                <button type="submit" name="action" value="resubmit" class="btn-action resubmit pulse-animation">
-                    <i class="fas fa-paper-plane"></i> إعادة إرسال الطلب
-                </button>
-            </form>
-            {% endif %}
+                {% if req.status == 'returned' %}
+                <form method="post">{% csrf_token %}
+                    <button type="submit" name="action" value="resubmit" class="btn-action resubmit pulse-animation">
+                        <i class="fas fa-paper-plane"></i> إعادة إرسال الطلب
+                    </button>
+                </form>
+                {% endif %}
             {% endif %}
 
             <a href="{% url 'requests:list' %}" class="btn-secondary">عودة للقائمة</a>
@@ -101,205 +101,216 @@
     </div>
     {% endif %}
 
-    <div class="detail-grid">
+    <div class="request-layout-grid">
 
-        <div class="data-card animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
-            <div class="card-header-simple">
-                <h3><i class="fas fa-user-tie"></i> بيانات العامل</h3>
-            </div>
-            <div class="worker-profile">
-                <div class="avatar-large">{{ req.worker.full_name|slice:":1" }}</div>
-                <h4 class="worker-name">{{ req.worker.full_name }}</h4>
-                <span class="worker-role">{{ req.worker.job_title }}</span>
-            </div>
-            <div class="info-list">
-                <div class="info-item">
-                    <span class="label">رقم الإقامة</span>
-                    <span class="value">{{ req.worker.iqama_number }}</span>
+        <div class="main-column">
+            
+            <div class="data-card animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+                <div class="card-header-simple">
+                    <h3><i class="fas fa-user-tie"></i> بيانات العامل</h3>
                 </div>
-                <div class="info-item">
-                    <span class="label">الجنسية</span>
-                    <span class="value">{{ req.worker.nationality }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="label">الشركة التابعة</span>
-                    <span class="value">{{ req.worker.vendor.company.name }}</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="data-card animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
-            <div class="card-header-simple">
-                <h3><i class="fas fa-clipboard-list"></i> تفاصيل الطلب</h3>
-            </div>
-
-            {% if req.status == 'returned' and req.return_reason %}
-            <div class="alert-box warning animate__animated animate__pulse">
-                <div class="icon"><i class="fas fa-exclamation-circle"></i></div>
-                <div>
-                    <strong>ملاحظة المورد حول النقص:</strong>
-                    <p>{{ req.return_reason }}</p>
-                </div>
-            </div>
-            {% endif %}
-
-            {% if req.status == 'rejected' and req.rejection_reason %}
-            <div class="rejection-alert animate__animated animate__shakeX">
-                <div class="icon"><i class="fas fa-exclamation-triangle"></i></div>
-                <div>
-                    <strong>سبب الرفض:</strong>
-                    <p>{{ req.rejection_reason }}</p>
-                </div>
-            </div>
-            {% endif %}
-
-            <div class="dynamic-fields-grid">
-                {% if req.title %}
-                <div class="field-box full-width">
-                    <span class="f-label">العنوان / الموضوع</span>
-                    <span class="f-value">{{ req.title }}</span>
-                </div>
-                {% endif %}
-
-                {% if req.notes %}
-                <div class="field-box full-width">
-                    <span class="f-label">ملاحظات إضافية</span>
-                    <span class="f-value">{{ req.notes }}</span>
-                </div>
-                {% endif %}
-
-                {% for val in dynamic_values %}
-                <div class="field-box">
-                    <span class="f-label">{{ val.field.label }}</span>
-                    <span class="f-value">
-                        {% if val.field.field_type == 'bool' %}
-                        {% if val.value_bool %} <span class="tag-yes">نعم</span> {% else %} <span
-                            class="tag-no">لا</span> {% endif %}
-                        {% elif val.field.field_type == 'date' %}
-                        {{ val.value_date|date:"Y-m-d" }}
-                        {% else %}
-                        {{ val.value_text|default:"-" }}
-                        {% endif %}
-                    </span>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-
-    <div class="data-card animate__animated animate__fadeInUp" style="margin-top: 30px; animation-delay: 0.3s;">
-            <div class="card-header-simple">
-                <h3><i class="fas fa-paperclip"></i> المرفقات والوثائق</h3>
-            </div>
-
-            <div class="attachments-grid">
-                {% for att in req.attachments.all %}
-                <div class="attachment-item animate__animated animate__zoomIn">
-                    <div class="att-icon">
-                        {% if att.is_image %}
-                        <img src="{{ att.file.url }}" alt="preview">
-                        {% else %}
-                        <i class="fas fa-file-pdf text-danger"></i>
-                        {% endif %}
+                <div class="worker-profile-horizontal">
+                    <div class="avatar-medium">{{ req.worker.full_name|slice:":1" }}</div>
+                    <div class="worker-info-text">
+                        <h4 class="worker-name">{{ req.worker.full_name }}</h4>
+                        <span class="worker-role">{{ req.worker.job_title }} | {{ req.worker.nationality }}</span>
+                        <div class="worker-meta">
+                            <span><i class="far fa-id-card"></i> {{ req.worker.iqama_number }}</span>
+                            <span><i class="far fa-building"></i> {{ req.worker.vendor.company.name }}</span>
+                        </div>
                     </div>
-                    <div class="att-info">
-                        <span class="att-name" title="{{ att.filename }}">{{ att.description|default:att.filename
-                            }}</span>
-                        <span class="att-meta">
-                            {{ att.created_at|date:"Y-m-d" }} | {{ att.uploaded_by.get_full_name }}
+                </div>
+            </div>
+
+            <div class="data-card animate__animated animate__fadeInUp" style="margin-top: 25px; animation-delay: 0.3s;">
+                <div class="card-header-simple">
+                    <h3><i class="fas fa-clipboard-list"></i> تفاصيل الطلب</h3>
+                </div>
+
+                {% if req.status == 'returned' and req.return_reason %}
+                <div class="alert-box warning animate__animated animate__pulse">
+                    <div class="icon"><i class="fas fa-exclamation-circle"></i></div>
+                    <div>
+                        <strong>ملاحظة المورد حول النقص:</strong>
+                        <p>{{ req.return_reason }}</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if req.status == 'rejected' and req.rejection_reason %}
+                <div class="rejection-alert animate__animated animate__shakeX">
+                    <div class="icon"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div>
+                        <strong>سبب الرفض:</strong>
+                        <p>{{ req.rejection_reason }}</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="dynamic-fields-grid">
+                    {% if req.title %}
+                    <div class="field-box full-width">
+                        <span class="f-label">العنوان / الموضوع</span>
+                        <span class="f-value">{{ req.title }}</span>
+                    </div>
+                    {% endif %}
+
+                    {% if req.notes %}
+                    <div class="field-box full-width">
+                        <span class="f-label">ملاحظات إضافية</span>
+                        <span class="f-value">{{ req.notes }}</span>
+                    </div>
+                    {% endif %}
+
+                    {% for val in dynamic_values %}
+                    <div class="field-box">
+                        <span class="f-label">{{ val.field.label }}</span>
+                        <span class="f-value">
+                            {% if val.field.field_type == 'bool' %}
+                                {% if val.value_bool %} <span class="tag-yes">نعم</span> {% else %} <span class="tag-no">لا</span> {% endif %}
+                            {% elif val.field.field_type == 'date' %}
+                                {{ val.value_date|date:"Y-m-d" }}
+                            {% else %}
+                                {{ val.value_text|default:"-" }}
+                            {% endif %}
                         </span>
                     </div>
-                    <div class="att-actions">
-                        <a href="{{ att.file.url }}" target="_blank" class="btn-view" title="معاينة"><i
-                                class="fas fa-eye"></i></a>
-                        <a href="{{ att.file.url }}" download class="btn-download" title="تحميل"><i
-                                class="fas fa-download"></i></a>
-                    {% if request.user.company.company_type == 'client' %}
-                        <form method="post" class="delete-att-form" onsubmit="return confirm('هل أنت متأكد من حذف هذا المرفق؟');">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="delete_attachment">
-                            <input type="hidden" name="attachment_id" value="{{ att.id }}">
-                            <button type="submit" class="btn-delete" title="حذف">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </form>
-                        {% endif %}
-                    </div>
+                    {% endfor %}
                 </div>
-                {% empty %}
-                <div class="empty-state-small full-width">
-                    <p>لا توجد مرفقات (عقود، صور إقامة، فحص طبي) حتى الآن.</p>
-                </div>
-                {% endfor %}
             </div>
 
-            {% if req.status != 'completed' and req.status != 'rejected' %}
-            <div class="upload-section">
-                <form method="post" enctype="multipart/form-data" class="upload-form">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="upload_attachment">
+            <div class="data-card animate__animated animate__fadeInUp" style="margin-top: 25px; animation-delay: 0.4s;">
+                <div class="card-header-simple">
+                    <h3><i class="fas fa-paperclip"></i> المرفقات والوثائق</h3>
+                </div>
 
-                    <div class="upload-inputs">
-                        <div class="file-input-wrapper">
-                            <input type="file" name="attachment_file" id="file-upload" required>
-                            <label for="file-upload" class="file-label">
-                                <i class="fas fa-cloud-upload-alt"></i> اختر ملف (PDF, IMG)
-                            </label>
+                <div class="attachments-grid">
+                    {% for att in req.attachments.all %}
+                    <div class="attachment-item animate__animated animate__zoomIn">
+                        <div class="att-icon">
+                            {% if att.is_image %}
+                            <img src="{{ att.file.url }}" alt="preview">
+                            {% else %}
+                            <i class="fas fa-file-pdf text-danger"></i>
+                            {% endif %}
                         </div>
-                        <input type="text" name="attachment_desc" placeholder="وصف الملف (مثال: صورة الإقامة)"
-                            class="desc-input">
-                        <button type="submit" class="btn-action pulse-animation small-btn">
-                            <i class="fas fa-plus"></i> رفع
-                        </button>
+                        <div class="att-info">
+                            <span class="att-name" title="{{ att.filename }}">{{ att.description|default:att.filename }}</span>
+                            <span class="att-meta">{{ att.created_at|date:"Y-m-d" }} | {{ att.uploaded_by.get_full_name }}</span>
+                        </div>
+                        <div class="att-actions">
+                            <a href="{{ att.file.url }}" target="_blank" class="btn-view" title="معاينة"><i class="fas fa-eye"></i></a>
+                            <a href="{{ att.file.url }}" download class="btn-download" title="تحميل"><i class="fas fa-download"></i></a>
+                            {% if request.user.company.company_type == 'client' %}
+                            <form method="post" class="delete-att-form" onsubmit="return confirm('هل أنت متأكد من حذف هذا المرفق؟');">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="delete_attachment">
+                                <input type="hidden" name="attachment_id" value="{{ att.id }}">
+                                <button type="submit" class="btn-delete" title="حذف"><i class="fas fa-trash-alt"></i></button>
+                            </form>
+                            {% endif %}
+                        </div>
                     </div>
-                </form>
-            </div>
-            {% endif %}
-        </div>
-
-    <div class="data-card animate__animated animate__fadeInUp" style="margin-top: 30px; animation-delay: 0.4s;">
-        <div class="card-header-simple">
-            <h3><i class="fas fa-comments"></i> النقاشات والتعليقات</h3>
-        </div>
-
-        <div class="comments-history">
-            {% for comment in req.comments.all %}
-            <div
-                class="comment-bubble {% if comment.author == request.user %}own{% endif %} animate__animated animate__fadeInRight">
-                <div class="comment-meta">
-                    <span class="author-name">{{ comment.author.get_full_name }}</span>
-                    <span class="comment-date">{{ comment.created_at|date:"Y-m-d h:i A" }}</span>
+                    {% empty %}
+                    <div class="empty-state-small full-width">
+                        <p>لا توجد مرفقات حتى الآن.</p>
+                    </div>
+                    {% endfor %}
                 </div>
-                <div class="comment-body">
-                    {{ comment.body }}
+
+                {% if req.status != 'completed' and req.status != 'rejected' %}
+                <div class="upload-section">
+                    <form method="post" enctype="multipart/form-data" class="upload-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="upload_attachment">
+                        <div class="upload-inputs">
+                            <div class="file-input-wrapper">
+                                <input type="file" name="attachment_file" id="file-upload" required>
+                                <label for="file-upload" class="file-label">
+                                    <i class="fas fa-cloud-upload-alt"></i> اختر ملف
+                                </label>
+                            </div>
+                            <input type="text" name="attachment_desc" placeholder="وصف الملف..." class="desc-input">
+                            <button type="submit" class="btn-action pulse-animation small-btn"><i class="fas fa-plus"></i> رفع</button>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="data-card animate__animated animate__fadeInUp" style="margin-top: 25px; animation-delay: 0.5s;">
+                <div class="card-header-simple">
+                    <h3><i class="fas fa-comments"></i> النقاشات والتعليقات</h3>
+                </div>
+
+                <div class="comments-history">
+                    {% for comment in req.comments.all %}
+                    <div class="comment-bubble {% if comment.author == request.user %}own{% endif %} animate__animated animate__fadeInRight">
+                        <div class="comment-meta">
+                            <span class="author-name">{{ comment.author.get_full_name }}</span>
+                            <span class="comment-date">{{ comment.created_at|date:"Y-m-d h:i A" }}</span>
+                        </div>
+                        <div class="comment-body">{{ comment.body }}</div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-comments">
+                        <i class="far fa-comment-dots"></i>
+                        <p>لا توجد تعليقات حتى الآن.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% if req.status != 'completed' and req.status != 'rejected' %}
+                <div class="add-comment-section">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="add_comment">
+                        <div class="comment-input-wrapper">
+                            <textarea name="comment_body" rows="2" placeholder="اكتب ملاحظة أو رد هنا..." required></textarea>
+                            <button type="submit" class="btn-send" title="إرسال"><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+
+        </div> <div class="sidebar-column animate__animated animate__fadeInLeft">
+            
+            <div class="data-card sticky-sidebar">
+                <div class="card-header-simple">
+                    <h3><i class="fas fa-history"></i> سجل التتبع</h3>
+                </div>
+                
+                <div class="timeline-container-mini">
+                    {% for event in timeline %}
+                    <div class="timeline-item-mini">
+                        <div class="tl-dot 
+                            {% if event.new_status == 'submitted' %}bg-primary
+                            {% elif event.new_status == 'in_progress' %}bg-info
+                            {% elif event.new_status == 'returned' %}bg-warning
+                            {% elif event.new_status == 'rejected' %}bg-danger
+                            {% elif event.new_status == 'completed' %}bg-success
+                            {% else %}bg-secondary{% endif %}">
+                        </div>
+                        
+                        <div class="tl-content">
+                            <span class="tl-action">{{ event.action_name }}</span>
+                            <span class="tl-date">{{ event.created_at|date:"d/m H:i" }}</span>
+                            <div class="tl-user small text-muted">
+                                <i class="fas fa-user-circle"></i> {{ event.user.get_full_name }}
+                            </div>
+                            {% if event.description %}
+                                <p class="tl-desc">{{ event.description|truncatechars:50 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center small">لا يوجد سجل.</p>
+                    {% endfor %}
                 </div>
             </div>
-            {% empty %}
-            <div class="empty-comments">
-                <i class="far fa-comment-dots"></i>
-                <p>لا توجد تعليقات أو نقاشات حول هذا الطلب حتى الآن.</p>
-            </div>
-            {% endfor %}
-        </div>
 
-        
-
-        <div class="add-comment-section">
-            <form method="post">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="add_comment">
-                <div class="comment-input-wrapper">
-                    <textarea name="comment_body" rows="2" placeholder="اكتب ملاحظة، استفسار، أو رد هنا..."
-                        required></textarea>
-                    <button type="submit" class="btn-send" title="إرسال التعليق">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-</section>
+        </div> </div> </section>
 
 <div id="rejectModal" class="modal-overlay">
     <div class="modal-content animate__animated animate__zoomIn">
@@ -314,8 +325,7 @@
                 <p>هل أنت متأكد؟ سيتم إغلاق الطلب ولن يمكن التراجع عن هذا الإجراء.</p>
                 <div class="form-group">
                     <label>سبب الرفض <span class="text-danger">*</span></label>
-                    <textarea name="rejection_reason" rows="3" required
-                        placeholder="يرجى توضيح سبب الرفض..."></textarea>
+                    <textarea name="rejection_reason" rows="3" required placeholder="يرجى توضيح سبب الرفض..."></textarea>
                 </div>
             </div>
             <div class="modal-footer">
@@ -384,7 +394,6 @@
     function openCompleteModal() { document.getElementById('completeModal').classList.add('active'); }
     function closeCompleteModal() { document.getElementById('completeModal').classList.remove('active'); }
 
-    // Close on outside click
     window.onclick = function (event) {
         if (event.target.classList.contains('modal-overlay')) {
             event.target.classList.remove('active');
@@ -393,7 +402,6 @@
 </script>
 
 <style>
-    /* Global & System Variables */
     :root {
         --primary: #10b981;
         --primary-dark: #059669;
@@ -404,784 +412,174 @@
         --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.02);
     }
 
-    .dashboard-wrapper {
-        direction: rtl;
-        margin-right: 80px;
-        padding-bottom: 60px;
-    }
+    .dashboard-wrapper { direction: rtl; margin-right: 80px; padding-bottom: 60px; }
+    
+    /* Header */
+    .db-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .welcome-text { display: flex; align-items: center; gap: 15px; }
+    .header-icon { width: 55px; height: 55px; background: rgba(16, 185, 129, 0.1); color: var(--primary); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+    .db-header h1 { font-size: 24px; font-weight: 800; color: var(--dark); margin: 0; display: flex; align-items: center; gap: 10px; }
+    .id-badge { background: #e2e8f0; color: #64748b; padding: 2px 10px; border-radius: 8px; font-size: 16px; font-weight: normal; }
+    .date-text { color: #94a3b8; font-weight: bold; font-family: sans-serif; }
 
-    /* 1. Header */
-    .db-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 30px;
-    }
+    /* Draft Bar */
+    .draft-action-bar { background: #fffbeb; border: 1px solid #fcd34d; padding: 15px 25px; border-radius: 12px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.1); }
+    .draft-info { display: flex; align-items: center; gap: 10px; color: #92400e; }
+    .draft-buttons { display: flex; gap: 10px; }
+    .btn-draft-delete { background: white; border: 1px solid #ef4444; color: #ef4444; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+    .btn-draft-delete:hover { background: #fee2e2; }
+    .btn-draft-send { background: #10b981; border: none; color: white; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; transition: 0.3s; }
+    .btn-draft-send:hover { background: #059669; transform: translateY(-2px); }
 
-    .welcome-text {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-
-    .header-icon {
-        width: 55px;
-        height: 55px;
-        background: rgba(16, 185, 129, 0.1);
-        color: var(--primary);
-        border-radius: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-    }
-
-    .db-header h1 {
-        font-size: 24px;
-        font-weight: 800;
-        color: var(--dark);
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .id-badge {
-        background: #e2e8f0;
-        color: #64748b;
-        padding: 2px 10px;
-        border-radius: 8px;
-        font-size: 16px;
-        font-weight: normal;
-    }
-.draft-action-bar {
-    background: #fffbeb; /* أصفر فاتح */
-    border: 1px solid #fcd34d;
-    padding: 15px 25px;
-    border-radius: 12px;
-    margin-bottom: 25px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.1);
-}
-
-.draft-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: #92400e;
-}
-
-.draft-buttons {
-    display: flex;
-    gap: 10px;
-}
-
-.btn-draft-delete {
-    background: white;
-    border: 1px solid #ef4444;
-    color: #ef4444;
-    padding: 8px 15px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: 0.3s;
-}
-
-.btn-draft-delete:hover {
-    background: #fee2e2;
-}
-
-.btn-draft-send {
-    background: #10b981; /* أخضر */
-    border: none;
-    color: white;
-    padding: 8px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: 0.3s;
-}
-
-.btn-draft-send:hover {
-    background: #059669;
-    transform: translateY(-2px);
-}
-    .date-text {
-        color: #94a3b8;
-        font-weight: bold;
-        font-family: sans-serif;
-    }
-
-    /* 2. Actions Bar */
-    .actions-bar {
-        background: white;
-        padding: 20px 30px;
-        border-radius: 20px;
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.03);
-        border: 1px solid #e2e8f0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 30px;
-    }
-
-    .action-instructions {
-        color: #64748b;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-weight: 500;
-    }
-
-    .buttons-group {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-    }
-
-    .btn-action {
-        padding: 10px 20px;
-        border-radius: 12px;
-        font-weight: bold;
-        border: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        color: white;
-        transition: 0.3s;
-        font-size: 14px;
-        text-decoration: none;
-    }
-/* تنسيق زر الحذف */
-.delete-att-form {
-    flex: 1; /* ليأخذ مساحة متساوية مع الأزرار الأخرى */
-    display: flex;
-}
-
-.btn-delete {
-    width: 100%;
-    border: none;
-    background: #fee2e2;
-    color: #dc2626;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 12px;
-    padding: 5px;
-    transition: 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.btn-delete:hover {
-    background: #dc2626;
-    color: white;
-}
-    .btn-action:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .btn-action.start {
-        background: #3b82f6;
-    }
-
-    /* Blue */
-    .btn-action.complete {
-        background: var(--success);
-    }
-
-    /* Green */
-    .btn-action.return {
-        background: var(--warning);
-        color: white;
-    }
-
-    /* Orange */
-    .btn-action.reject {
-        background: white;
-        color: var(--danger);
-        border: 1px solid #fee2e2;
-    }
-
-    .btn-action.reject:hover {
-        background: var(--danger);
-        color: white;
-    }
-
-    .btn-action.resubmit {
-        background: var(--primary);
-    }
-
-    .btn-secondary {
-        background: #f1f5f9;
-        color: #64748b;
-        padding: 10px 18px;
-        border-radius: 12px;
-        text-decoration: none;
-        font-weight: bold;
-        transition: 0.2s;
-    }
-
-    .btn-secondary:hover {
-        background: #e2e8f0;
-        color: var(--dark);
-    }
-
-    /* 3. Detail Grid & Cards */
-    .detail-grid {
+    /* --- New Grid Layout System --- */
+    .request-layout-grid {
         display: grid;
-        grid-template-columns: 350px 1fr;
+        grid-template-columns: 3fr 1fr; /* 75% Right, 25% Left */
         gap: 25px;
         align-items: start;
     }
 
-    .data-card {
-        background: white;
-        border-radius: 24px;
-        padding: 25px;
-        box-shadow: var(--card-shadow);
-        border: 1px solid #f1f5f9;
+    .sticky-sidebar {
+        position: sticky;
+        top: 20px;
+        max-height: 90vh;
+        overflow-y: auto;
     }
 
-    .card-header-simple {
-        border-bottom: 1px solid #f1f5f9;
-        padding-bottom: 15px;
-        margin-bottom: 20px;
-    }
+    /* Worker Profile Horizontal */
+    .worker-profile-horizontal { display: flex; align-items: center; gap: 20px; }
+    .avatar-medium { width: 60px; height: 60px; background: #e0f2fe; color: #0369a1; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; border: 3px solid #f0f9ff; }
+    .worker-info-text { display: flex; flex-direction: column; }
+    .worker-name { margin: 0; color: var(--dark); font-size: 18px; font-weight: 800; }
+    .worker-role { color: #64748b; font-size: 14px; margin-bottom: 5px; }
+    .worker-meta { display: flex; gap: 15px; font-size: 13px; color: #94a3b8; }
+    .worker-meta i { color: var(--primary); }
 
-    .card-header-simple h3 {
-        margin: 0;
-        font-size: 16px;
-        color: var(--dark);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
+    /* Mini Timeline (Left Sidebar) */
+    .timeline-container-mini { position: relative; padding-right: 15px; border-right: 2px solid #f1f5f9; margin-top: 15px; }
+    .timeline-item-mini { position: relative; margin-bottom: 20px; }
+    .timeline-item-mini:last-child { margin-bottom: 0; }
+    .tl-dot { position: absolute; right: -20px; top: 5px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 1px #e2e8f0; }
+    .tl-content { display: flex; flex-direction: column; }
+    .tl-action { font-size: 13px; font-weight: bold; color: var(--dark); }
+    .tl-date { font-size: 11px; color: #94a3b8; }
+    .tl-desc { font-size: 11px; background: #f8fafc; padding: 5px; border-radius: 4px; margin-top: 4px; color: #475569; }
 
-    /* Worker Profile */
-    .worker-profile {
-        text-align: center;
-        padding-bottom: 20px;
-        border-bottom: 1px dashed #e2e8f0;
-        margin-bottom: 20px;
-    }
+    /* Timeline Colors */
+    .bg-primary { background-color: #3b82f6; }
+    .bg-success { background-color: #10b981; }
+    .bg-info { background-color: #0ea5e9; }
+    .bg-warning { background-color: #f59e0b; }
+    .bg-danger { background-color: #ef4444; }
+    .bg-secondary { background-color: #64748b; }
 
-    .avatar-large {
-        width: 80px;
-        height: 80px;
-        background: #e0f2fe;
-        color: #0369a1;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 28px;
-        font-weight: bold;
-        margin: 0 auto 15px;
-        border: 4px solid #f0f9ff;
-    }
+    /* Actions Bar */
+    .actions-bar { background: white; padding: 20px 30px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.03); border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .action-instructions { color: #64748b; font-size: 14px; display: flex; align-items: center; gap: 8px; font-weight: 500; }
+    .buttons-group { display: flex; gap: 10px; align-items: center; }
+    .btn-action { padding: 10px 20px; border-radius: 12px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; color: white; transition: 0.3s; font-size: 14px; text-decoration: none; }
+    .btn-action:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); }
+    .btn-action.start { background: #3b82f6; }
+    .btn-action.complete { background: var(--success); }
+    .btn-action.return { background: var(--warning); color: white; }
+    .btn-action.reject { background: white; color: var(--danger); border: 1px solid #fee2e2; }
+    .btn-action.reject:hover { background: var(--danger); color: white; }
+    .btn-action.resubmit { background: var(--primary); }
+    .btn-secondary { background: #f1f5f9; color: #64748b; padding: 10px 18px; border-radius: 12px; text-decoration: none; font-weight: bold; transition: 0.2s; }
+    .btn-secondary:hover { background: #e2e8f0; color: var(--dark); }
 
-    .worker-name {
-        margin: 0;
-        color: var(--dark);
-        font-size: 18px;
-        font-weight: 800;
-    }
+    /* Cards */
+    .data-card { background: white; border-radius: 24px; padding: 25px; box-shadow: var(--card-shadow); border: 1px solid #f1f5f9; }
+    .card-header-simple { border-bottom: 1px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 20px; }
+    .card-header-simple h3 { margin: 0; font-size: 16px; color: var(--dark); display: flex; align-items: center; gap: 10px; }
 
-    .worker-role {
-        color: #64748b;
-        font-size: 14px;
-    }
-
-    .info-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 12px 0;
-        border-bottom: 1px solid #f8fafc;
-    }
-
-    .info-item .label {
-        color: #94a3b8;
-        font-size: 13px;
-    }
-
-    .info-item .value {
-        font-weight: bold;
-        color: var(--dark);
-        font-size: 14px;
-    }
+    /* Fields */
+    .dynamic-fields-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+    .field-box { background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #f1f5f9; }
+    .full-width { grid-column: 1 / -1; }
+    .f-label { display: block; color: #94a3b8; font-size: 12px; margin-bottom: 5px; }
+    .f-value { display: block; color: var(--dark); font-weight: bold; font-size: 15px; }
+    .tag-yes { color: var(--success); background: #dcfce7; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+    .tag-no { color: var(--danger); background: #fee2e2; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
 
     /* Alerts */
-    .alert-box.warning {
-        background: #fffbeb;
-        border: 1px solid #fcd34d;
-        color: #92400e;
-        padding: 15px;
-        border-radius: 12px;
-        display: flex;
-        gap: 10px;
-        margin-bottom: 20px;
-    }
+    .alert-box.warning { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; padding: 15px; border-radius: 12px; display: flex; gap: 10px; margin-bottom: 20px; }
+    .rejection-alert { background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 15px; display: flex; gap: 10px; margin-bottom: 20px; color: #991b1b; }
 
-    .rejection-alert {
-        background: #fef2f2;
-        border: 1px solid #fecaca;
-        border-radius: 12px;
-        padding: 15px;
-        display: flex;
-        gap: 10px;
-        margin-bottom: 20px;
-        color: #991b1b;
-    }
+    /* Attachments */
+    .attachments-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+    .attachment-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 10px; transition: 0.3s; position: relative; overflow: hidden; }
+    .attachment-item:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-color: var(--primary); }
+    .att-icon { height: 80px; background: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; font-size: 30px; }
+    .att-icon img { width: 100%; height: 100%; object-fit: cover; }
+    .att-info { display: flex; flex-direction: column; }
+    .att-name { font-weight: bold; font-size: 13px; color: var(--dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .att-meta { font-size: 10px; color: #94a3b8; }
+    .att-actions { display: flex; gap: 5px; }
+    .att-actions a, .att-actions button { flex: 1; text-align: center; padding: 5px; border-radius: 6px; font-size: 12px; transition: 0.2s; }
+    .btn-view { background: #e0f2fe; color: #0284c7; }
+    .btn-download { background: #f1f5f9; color: #64748b; }
+    .delete-att-form { flex: 1; display: flex; }
+    .btn-delete { width: 100%; border: none; background: #fee2e2; color: #dc2626; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .btn-delete:hover { background: #dc2626; color: white; }
+    .empty-state-small { grid-column: 1 / -1; text-align: center; padding: 20px; color: #94a3b8; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1; }
 
-    /* Dynamic Fields */
-    .dynamic-fields-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 15px;
-    }
+    /* Upload */
+    .upload-section { background: #fff; padding-top: 15px; border-top: 1px solid #f1f5f9; }
+    .upload-inputs { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; }
+    .file-input-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
+    .file-label { background: #f1f5f9; color: var(--dark); padding: 10px 15px; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 5px; border: 1px dashed #cbd5e1; transition: 0.3s; }
+    .file-input-wrapper:hover .file-label { border-color: var(--primary); color: var(--primary); background: #f0fdf4; }
+    .desc-input { flex: 1; padding: 10px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 13px; outline: none; }
+    .desc-input:focus { border-color: var(--primary); }
+    .small-btn { padding: 10px 20px; }
 
-    .field-box {
-        background: #f8fafc;
-        padding: 15px;
-        border-radius: 12px;
-        border: 1px solid #f1f5f9;
-    }
-
-    .full-width {
-        grid-column: 1 / -1;
-    }
-
-    .f-label {
-        display: block;
-        color: #94a3b8;
-        font-size: 12px;
-        margin-bottom: 5px;
-    }
-
-    .f-value {
-        display: block;
-        color: var(--dark);
-        font-weight: bold;
-        font-size: 15px;
-    }
-
-    .tag-yes {
-        color: var(--success);
-        background: #dcfce7;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 12px;
-    }
-
-    .tag-no {
-        color: var(--danger);
-        background: #fee2e2;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 12px;
-    }
-
-    /* 4. Comments Section */
-    .comments-history {
-        max-height: 400px;
-        overflow-y: auto;
-        padding: 10px;
-        margin-bottom: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .comment-bubble {
-        background: #f1f5f9;
-        padding: 15px;
-        border-radius: 18px 18px 0 18px;
-        max-width: 80%;
-        align-self: flex-start;
-    }
-
-    .comment-bubble.own {
-        background: rgba(16, 185, 129, 0.1);
-        border-radius: 18px 18px 18px 0;
-        border-right: 4px solid var(--primary);
-        align-self: flex-end;
-    }
-
-    .comment-meta {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 5px;
-        font-size: 11px;
-        color: #94a3b8;
-    }
-
-    .author-name {
-        font-weight: 800;
-        color: var(--dark);
-    }
-
-    .comment-body {
-        color: #334155;
-        font-size: 14px;
-        line-height: 1.6;
-    }
-
-    .comment-input-wrapper {
-        display: flex;
-        gap: 10px;
-        background: #f8fafc;
-        padding: 10px;
-        border-radius: 15px;
-        border: 1px solid #e2e8f0;
-    }
-
-    .comment-input-wrapper textarea {
-        flex: 1;
-        border: none;
-        background: transparent;
-        outline: none;
-        resize: none;
-        font-family: inherit;
-        padding: 10px;
-    }
-
-    .btn-send {
-        background: var(--primary);
-        color: white;
-        border: none;
-        width: 45px;
-        height: 45px;
-        border-radius: 12px;
-        cursor: pointer;
-        transition: 0.3s;
-    }
-
-    .btn-send:hover {
-        background: var(--primary-dark);
-        transform: scale(1.05);
-    }
+    /* Comments */
+    .comments-history { max-height: 400px; overflow-y: auto; padding: 10px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 15px; }
+    .comment-bubble { background: #f1f5f9; padding: 15px; border-radius: 18px 18px 0 18px; max-width: 80%; align-self: flex-start; }
+    .comment-bubble.own { background: rgba(16, 185, 129, 0.1); border-radius: 18px 18px 18px 0; border-right: 4px solid var(--primary); align-self: flex-end; }
+    .comment-meta { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 11px; color: #94a3b8; }
+    .author-name { font-weight: 800; color: var(--dark); }
+    .comment-body { color: #334155; font-size: 14px; line-height: 1.6; }
+    .empty-comments { text-align: center; color: #cbd5e1; padding: 20px; }
+    .empty-comments i { font-size: 30px; margin-bottom: 10px; display: block; }
+    .comment-input-wrapper { display: flex; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 15px; border: 1px solid #e2e8f0; }
+    .comment-input-wrapper textarea { flex: 1; border: none; background: transparent; outline: none; resize: none; font-family: inherit; padding: 10px; }
+    .btn-send { background: var(--primary); color: white; border: none; width: 45px; height: 45px; border-radius: 12px; cursor: pointer; transition: 0.3s; }
+    .btn-send:hover { background: var(--primary-dark); transform: scale(1.05); }
 
     /* Status Badges */
-    .status-badge-lg {
-        padding: 8px 16px;
-        border-radius: 10px;
-        font-weight: bold;
-        font-size: 14px;
-        display: inline-flex;
-        gap: 8px;
-        align-items: center;
-    }
-
-    .status-badge-lg.submitted {
-        background: #fff7ed;
-        color: #ea580c;
-    }
-
-    .status-badge-lg.in_progress {
-        background: #eff6ff;
-        color: #2563eb;
-    }
-
-    .status-badge-lg.returned {
-        background: #fffbeb;
-        color: #b45309;
-    }
-
-    .status-badge-lg.completed {
-        background: #f0fdf4;
-        color: #16a34a;
-    }
-
-    .status-badge-lg.rejected {
-        background: #fef2f2;
-        color: #ef4444;
-    }
+    .status-badge-lg { padding: 8px 16px; border-radius: 10px; font-weight: bold; font-size: 14px; display: inline-flex; gap: 8px; align-items: center; }
+    .status-badge-lg.submitted { background: #fff7ed; color: #ea580c; }
+    .status-badge-lg.in_progress { background: #eff6ff; color: #2563eb; }
+    .status-badge-lg.returned { background: #fffbeb; color: #b45309; }
+    .status-badge-lg.completed { background: #f0fdf4; color: #16a34a; }
+    .status-badge-lg.rejected { background: #fef2f2; color: #ef4444; }
+    .status-badge-lg.draft { background: #f3f4f6; color: #4b5563; }
 
     /* Modals */
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(15, 23, 42, 0.6);
-        backdrop-filter: blur(4px);
-        z-index: 1000;
-        display: none;
-        align-items: center;
-        justify-content: center;
-    }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1000; display: none; align-items: center; justify-content: center; }
+    .modal-overlay.active { display: flex; }
+    .modal-content { background: white; width: 500px; max-width: 90%; border-radius: 24px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2); overflow: hidden; }
+    .modal-header { padding: 20px 25px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+    .modal-body { padding: 25px; }
+    .modal-footer { padding: 20px 25px; background: #f8fafc; display: flex; justify-content: flex-end; gap: 10px; }
+    .close-btn { background: none; border: none; font-size: 24px; color: #94a3b8; cursor: pointer; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--dark); font-size: 13px; }
+    .form-group textarea { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; outline: none; font-family: inherit; transition: 0.3s; }
+    .form-group textarea:focus { border-color: var(--primary); background: white; }
 
-    .modal-overlay.active {
-        display: flex;
-    }
-
-    .modal-content {
-        background: white;
-        width: 500px;
-        max-width: 90%;
-        border-radius: 24px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-        overflow: hidden;
-    }
-
-    .modal-header {
-        padding: 20px 25px;
-        border-bottom: 1px solid #f1f5f9;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .modal-body {
-        padding: 25px;
-    }
-
-    .modal-footer {
-        padding: 20px 25px;
-        background: #f8fafc;
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-    }
-
-    .close-btn {
-        background: none;
-        border: none;
-        font-size: 24px;
-        color: #94a3b8;
-        cursor: pointer;
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 8px;
-        font-weight: bold;
-        color: var(--dark);
-        font-size: 13px;
-    }
-
-    .form-group textarea {
-        width: 100%;
-        padding: 12px;
-        border: 2px solid #e2e8f0;
-        border-radius: 12px;
-        outline: none;
-        font-family: inherit;
-        transition: 0.3s;
-    }
-
-    .form-group textarea:focus {
-        border-color: var(--primary);
-        background: white;
-    }
-    /* تنسيقات المرفقات */
-.attachments-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.attachment-item {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    transition: 0.3s;
-    position: relative;
-    overflow: hidden;
-}
-
-.attachment-item:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    border-color: var(--primary);
-}
-
-.att-icon {
-    height: 80px;
-    background: white;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    font-size: 30px;
-}
-
-.att-icon img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.att-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.att-name {
-    font-weight: bold;
-    font-size: 13px;
-    color: var(--dark);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.att-meta {
-    font-size: 10px;
-    color: #94a3b8;
-}
-
-.att-actions {
-    display: flex;
-    gap: 5px;
-}
-
-.att-actions a {
-    flex: 1;
-    text-align: center;
-    padding: 5px;
-    border-radius: 6px;
-    font-size: 12px;
-    transition: 0.2s;
-}
-
-.btn-view { background: #e0f2fe; color: #0284c7; }
-.btn-view:hover { background: #0284c7; color: white; }
-
-.btn-download { background: #f1f5f9; color: #64748b; }
-.btn-download:hover { background: #64748b; color: white; }
-
-.empty-state-small {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 20px;
-    color: #94a3b8;
-    background: #f8fafc;
-    border-radius: 12px;
-    border: 1px dashed #cbd5e1;
-}
-
-/* تنسيقات نموذج الرفع */
-.upload-section {
-    background: #fff;
-    padding-top: 15px;
-    border-top: 1px solid #f1f5f9;
-}
-
-.upload-inputs {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.file-input-wrapper {
-    position: relative;
-    overflow: hidden;
-    display: inline-block;
-}
-
-.file-input-wrapper input[type=file] {
-    font-size: 100px;
-    position: absolute;
-    left: 0;
-    top: 0;
-    opacity: 0;
-    cursor: pointer;
-}
-
-.file-label {
-    background: #f1f5f9;
-    color: var(--dark);
-    padding: 10px 15px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    border: 1px dashed #cbd5e1;
-    transition: 0.3s;
-}
-
-.file-input-wrapper:hover .file-label {
-    border-color: var(--primary);
-    color: var(--primary);
-    background: #f0fdf4;
-}
-
-.desc-input {
-    flex: 1;
-    padding: 10px;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    font-size: 13px;
-    outline: none;
-}
-
-.desc-input:focus { border-color: var(--primary); }
-
-.small-btn { padding: 10px 20px; }
-
-    /* Animation */
-    .pulse-animation {
-        animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-        0% {
-            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
-        }
-
-        70% {
-            box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
-        }
-
-        100% {
-            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-        }
-    }
+    .pulse-animation { animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
     /* Responsive */
     @media (max-width: 992px) {
-        .detail-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .actions-bar {
-            flex-direction: column;
-            gap: 15px;
-            align-items: stretch;
-        }
-
-        .buttons-group {
-            flex-direction: column;
-        }
-
-        .btn-action {
-            justify-content: center;
-        }
-
-        .btn-secondary {
-            justify-content: center;
-        }
+        .request-layout-grid { grid-template-columns: 1fr; }
+        .sidebar-column { order: -1; margin-bottom: 20px; } /* التايم لاين يظهر أولاً في الجوال */
+        .actions-bar { flex-direction: column; gap: 15px; align-items: stretch; }
+        .buttons-group { flex-direction: column; }
+        .btn-action, .btn-secondary { justify-content: center; }
     }
 </style>
 {% endblock %}

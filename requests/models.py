@@ -421,3 +421,22 @@ class RequestAttachment(models.Model):
     def is_image(self):
         name = self.file.name.lower()
         return name.endswith(('.png', '.jpg', '.jpeg', '.gif'))
+
+
+class RequestTimeline(models.Model):
+    request = models.ForeignKey(Request, on_delete=models.CASCADE, related_name='timeline_events', verbose_name="الطلب")
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name="المستخدم")
+    
+    action_name = models.CharField(max_length=100, verbose_name="الإجراء") # مثال: تم اعتماد الطلب
+    description = models.TextField(blank=True, null=True, verbose_name="تفاصيل") # مثال: سبب الرفض
+    
+    old_status = models.CharField(max_length=50, blank=True, null=True)
+    new_status = models.CharField(max_length=50, blank=True, null=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="وقت الحركة")
+
+    class Meta:
+        ordering = ['-created_at'] # الأحدث أولاً
+
+    def __str__(self):
+        return f"{self.action_name} - {self.request.id}"

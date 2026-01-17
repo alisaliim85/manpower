@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import TemplateView, ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
-from .models import Request, RequestType, RequestField, RequestFieldValue, RequestComment,RequestAttachment
+from .models import Request, RequestType, RequestField, RequestFieldValue, RequestComment,RequestAttachment, RequestTimeline
 from vendors.models import Worker
 from django.contrib import messages
 from django.utils import timezone
@@ -109,12 +109,25 @@ class RequestDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['dynamic_values'] = self.object.field_values.all().select_related('field')
+        context['timeline'] = self.object.timeline_events.all().order_by('-created_at')
         return context
-
+# --- دالة مساعدة لتسجيل الحركة في التايم لاين ---
+    def log_timeline(self, action, desc="", old_status="", new_status=""):
+        RequestTimeline.objects.create(
+            request=self.object,
+            user=self.request.user,
+            action_name=action,
+            description=desc,
+            old_status=old_status,
+            new_status=new_status
+        )
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         action = request.POST.get('action')
         user = request.user
+
+        # حفظ الحالة القديمة قبل التغيير
+        current_status = self.object.status
         
         # ------------------------------------------------------------------
         # 1. إجراءات عامة (متاحة للجميع: عميل ومورد)
@@ -159,6 +172,8 @@ class RequestDetailView(LoginRequiredMixin, DetailView):
                 self.object.status = 'in_progress'
                 self.object.current_company = user.company
                 self.object.save()
+                # تسجيل الحركة
+                self.log_timeline("بدء المعالجة", "بدأ المورد في معالجة الطلب", current_status, 'in_progress')
                 messages.success(request, "تم بدء معالجة الطلب.")
 
             elif action == 'return_defect' and self.object.status == 'in_progress':
@@ -167,6 +182,8 @@ class RequestDetailView(LoginRequiredMixin, DetailView):
                     self.object.status = 'returned'
                     self.object.return_reason = reason
                     self.object.save()
+                    # تسجيل الحركة
+                    self.log_timeline("إعادة الطلب (نواقص)", f"السبب: {reason}", current_status, 'returned')
                     messages.warning(request, "تم إعادة الطلب للعميل لاستكمال النواقص.")
                 else:
                     messages.error(request, "يجب ذكر سبب الإعادة.")
@@ -182,6 +199,8 @@ class RequestDetailView(LoginRequiredMixin, DetailView):
                 self.object.closed_by = user
                 self.object.closed_at = timezone.now()
                 self.object.save()
+                # تسجيل الحركة
+                self.log_timeline("رفض الطلب", f"سبب الرفض: {reason}", current_status, 'rejected')
                 messages.error(request, "تم رفض الطلب وإغلاقه.")
 
             elif action == 'complete':
@@ -192,6 +211,8 @@ class RequestDetailView(LoginRequiredMixin, DetailView):
                 self.object.closed_by = user
                 self.object.closed_at = timezone.now()
                 self.object.save()
+                # تسجيل الحركة
+                self.log_timeline("إكمال الطلب", note, current_status, 'completed')
                 messages.success(request, "تم إكمال الطلب وإغلاقه بنجاح!")
 
         # ------------------------------------------------------------------
@@ -208,7 +229,8 @@ class RequestDetailView(LoginRequiredMixin, DetailView):
                 self.object.status = 'submitted' # تحويل الحالة لمرسل
                 self.object.created_at = timezone.now() # تحديث وقت الإرسال الفعلي
                 self.object.save()
-                
+                # تسجيل الحركة (الأهم)
+                self.log_timeline("إنشاء وإرسال الطلب", "تم اعتماد المسودة وإرسالها للمورد", 'draft', 'submitted')
                 messages.success(request, "تم إرسال الطلب للمورد بنجاح!")
                 return redirect('requests:list') # أو البقاء في نفس الصفحة
 
@@ -243,6 +265,7 @@ class RequestDetailView(LoginRequiredMixin, DetailView):
                 self.object.rejection_reason = "" 
                 self.object.return_reason = ""    
                 self.object.save()
+                self.log_timeline("إعادة إرسال (تصحيح)", "تم تعديل النواقص وإعادة الإرسال", 'returned', 'submitted')
                 messages.success(request, "تم تحديث البيانات وإعادة إرسال الطلب بنجاح.")
 
             # ب) حذف المرفق (متاح للعميل فقط)
