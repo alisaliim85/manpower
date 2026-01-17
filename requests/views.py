@@ -64,28 +64,83 @@ class RequestListView(LoginRequiredMixin, ListView):
     model = Request
     template_name = 'requests-templates/request_list.html'
     context_object_name = 'requests'
+    paginate_by = 20
 
     def get_queryset(self):
         user = self.request.user
-        qs = Request.objects.select_related('worker', 'request_type', 'created_by')
+        
+        # 1. الاستعلام الأساسي وترتيبه
+        qs = Request.objects.select_related('worker', 'request_type', 'created_by').order_by('-created_at')
 
+        # 2. تصفية البيانات حسب نوع المستخدم (بدون return)
         if user.company.company_type == 'client':
-            return qs.filter(created_by__company=user.company)
+            qs = qs.filter(created_by__company=user.company)
         elif user.company.company_type == 'vendor':
-            return qs.filter(worker__vendor__company=user.company).exclude(status='draft')
-            
-        return qs.none()
+            qs = qs.filter(worker__vendor__company=user.company).exclude(status='draft')
+        else:
+            return qs.none() # هنا فقط نعيد فارغ اذا لم يكن عميل او مورد
+
+        # 3. منطق البحث (Search Logic)
+        search_query = self.request.GET.get('q')
+        if search_query:
+            qs = qs.filter(
+                Q(id__icontains=search_query) |               # بحث برقم الطلب
+                Q(title__icontains=search_query) |            # بحث بعنوان الطلب
+                Q(worker__full_name__icontains=search_query) | # بحث باسم العامل
+                Q(worker__iqama_number__icontains=search_query)# بحث برقم الإقامة
+            )
+
+        # 4. منطق الفلترة (Status Filter)
+        status_filter = self.request.GET.get('status')
+        if status_filter and status_filter != "":
+            qs = qs.filter(status=status_filter)
+
+        # 5. الإرجاع النهائي بعد تطبيق كل الشروط
+        return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        qs = self.get_queryset() 
         
-        context['total_count'] = qs.count()
-        context['submitted_count'] = qs.filter(status='submitted').count()
-        context['in_progress_count'] = qs.filter(status='in_progress').count()
-        context['completed_count'] = qs.filter(status='completed').count()
-        context['rejected_count'] = qs.filter(status='rejected').count()
+        # هنا نحسب العدادات للإحصائيات بناءً على "كل البيانات" وليس نتائج البحث فقط
+        # لذلك نعيد استعلاماً جديداً (qs_all)
+        user = self.request.user
+        qs_all = Request.objects.select_related('worker', 'request_type', 'created_by')
         
+        if user.company.company_type == 'client':
+            qs_all = qs_all.filter(created_by__company=user.company)
+        elif user.company.company_type == 'vendor':
+            qs_all = qs_all.filter(worker__vendor__company=user.company).exclude(status='draft')
+
+        # الإحصائيات
+        context['total_count'] = qs_all.count()
+        context['submitted_count'] = qs_all.filter(status='submitted').count()
+        context['in_progress_count'] = qs_all.filter(status='in_progress').count()
+        context['completed_count'] = qs_all.filter(status='completed').count()
+        context['rejected_count'] = qs_all.filter(status='rejected').count()
+        context['companies_count'] = qs_all.values('worker__vendor__company').distinct().count()
+        
+        # تمرير قيم البحث الحالية للقالب لكي تظل مكتوبة في الحقل
+        context['current_q'] = self.request.GET.get('q', '')
+        context['current_status'] = self.request.GET.get('status', '')
+        
+        return context
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        #qs = self.get_queryset() 
+        user = self.request.user
+        qs_all = Request.objects.select_related('worker', 'request_type', 'created_by')
+        if user.company.company_type == 'client':
+            qs_all = qs_all.filter(created_by__company=user.company)
+        elif user.company.company_type == 'vendor':
+            qs_all = qs_all.filter(worker__vendor__company=user.company).exclude(status='draft')
+
+# الإحصائيات (Counters)
+        context['total_count'] = qs_all.count()
+        context['submitted_count'] = qs_all.filter(status='submitted').count()
+        context['in_progress_count'] = qs_all.filter(status='in_progress').count()
+        context['completed_count'] = qs_all.filter(status='completed').count()
+        context['rejected_count'] = qs_all.filter(status='rejected').count()
+        context['companies_count'] = qs_all.values('worker__vendor__company').distinct().count()        
         return context
 
 

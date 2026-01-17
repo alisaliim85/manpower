@@ -16,9 +16,11 @@
         </div>
 
         <div class="header-actions">
+            {% if request.user.company.company_type == 'client' %}
             <a href="{% url 'requests:create_wizard' %}" class="btn-action pulse-animation">
                 <i class="fas fa-plus"></i> إنشاء طلب جديد
             </a>
+            {% endif %}
         </div>
     </div>
 
@@ -30,15 +32,6 @@
                 <span class="count">{{ total_count|default:"0" }}</span>
             </div>
             <div class="mini-chart" style="width: 100%; background: #3b82f6;"></div>
-        </div>
-
-        <div class="stat-item animate__animated animate__fadeInUp" style="animation-delay: 0.15s;">
-            <div class="stat-icon purple"><i class="fas fa-building"></i></div>
-            <div class="stat-info">
-                <span class="label">الجهات المستفيدة</span>
-                <span class="count">{{ companies_count|default:"0" }}</span>
-            </div>
-            <div class="mini-chart" style="width: 80%; background: #7c3aed;"></div>
         </div>
 
         <div class="stat-item animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
@@ -80,18 +73,34 @@
 
     <div class="data-card animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
         
-        <div class="card-header-row">
-            <h3><i class="fas fa-list-alt"></i> سجل الطلبات التفصيلي</h3>
+   <div class="filter-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+        <h3><i class="fas fa-list-alt"></i> سجل الطلبات</h3>
+        
+        <form method="get" class="filter-form" style="display: flex; gap: 10px; flex: 1; justify-content: flex-end; max-width: 600px;">
             
-            <form method="get" class="search-container">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" name="q" value="{{ request.GET.q }}" 
-                           placeholder="بحث بـ: رقم الطلب، اسم العامل، أو رقم الإقامة...">
-                </div>
-                <button type="submit" class="btn-search">بحث</button>
-            </form>
-        </div>
+            <div class="search-box" style="position: relative; flex: 2;">
+                <i class="fas fa-search" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+                <input type="text" name="q" value="{{ current_q }}" 
+                       placeholder="بحث برقم الطلب، اسم العامل..." 
+                       style="width: 100%; padding: 10px 40px 10px 15px; border: 1px solid #e2e8f0; border-radius: 12px; outline: none;">
+            </div>
+            
+            <div class="select-box" style="flex: 1;">
+                <select name="status" onchange="this.form.submit()" 
+                        style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 12px; cursor: pointer; outline: none;">
+                    <option value="">كل الحالات</option>
+                    <option value="draft" {% if current_status == 'draft' %}selected{% endif %}>مسودة</option>
+                    <option value="submitted" {% if current_status == 'submitted' %}selected{% endif %}>جديد (مرسل)</option>
+                    <option value="in_progress" {% if current_status == 'in_progress' %}selected{% endif %}>قيد المعالجة</option>
+                    <option value="returned" {% if current_status == 'returned' %}selected{% endif %}>معاد</option>
+                    <option value="completed" {% if current_status == 'completed' %}selected{% endif %}>مكتمل</option>
+                    <option value="rejected" {% if current_status == 'rejected' %}selected{% endif %}>مرفوض</option>
+                </select>
+            </div>
+
+            <button type="submit" style="display: none;">بحث</button>
+        </form>
+    </div>
 
         <div class="table-responsive">
             <table class="modern-table">
@@ -99,7 +108,7 @@
                     <tr>
                         <th>رقم الطلب</th>
                         <th>نوع الإجراء</th>
-                        <th>بيانات العامل (الاسم / الإقامة)</th>
+                        <th>بيانات العامل</th>
                         <th>الجهة / الشركة</th>
                         <th>تاريخ الطلب</th>
                         <th>الحالة</th>
@@ -108,7 +117,7 @@
                 </thead>
                 <tbody>
                     {% for req in requests %}
-                    <tr>
+                    <tr class="clickable-row" onclick="window.location='{% url 'requests:detail' req.pk %}'">
                         <td class="id-cell">#{{ req.id }}</td>
                         
                         <td class="type-cell">
@@ -128,24 +137,30 @@
 
                         <td>
                             <div class="company-info">
-                                <i class="fas fa-building" style="color: #94a3b8;"></i>
-                                {{ req.worker.vendor.company.name|default:"-" }}
+                                <i class="fas fa-building text-muted"></i>
+                                {% if request.user.company.company_type == 'client' %}
+                                    {{ req.worker.vendor.company.name }}
+                                {% else %}
+                                    {{ req.created_by.company.name }}
+                                {% endif %}
                             </div>
                         </td>
 
                         <td class="date-cell">{{ req.created_at|date:"Y-m-d" }}</td>
 
                         <td>
-                            {% if req.status == 'submitted' %}
-                                <span class="status-badge warning"><i class="fas fa-paper-plane"></i> مرسل</span>
+                            {% if req.status == 'draft' %}
+                                <span class="status-badge default"><i class="fas fa-pencil-alt"></i> مسودة</span>
+                            {% elif req.status == 'submitted' %}
+                                <span class="status-badge warning"><i class="fas fa-paper-plane"></i> جديد</span>
                             {% elif req.status == 'in_progress' %}
-                                <span class="status-badge info"><i class="fas fa-spinner fa-spin"></i> قيد المعالجة</span>
-                            {% elif req.status == 'completed' or req.status == 'approved' %}
-                                <span class="status-badge success"><i class="fas fa-check"></i> مكتمل</span>
+                                <span class="status-badge info"><i class="fas fa-cog fa-spin"></i> قيد المعالجة</span>
+                            {% elif req.status == 'returned' %}
+                                <span class="status-badge orange"><i class="fas fa-undo"></i> معاد</span>
+                            {% elif req.status == 'completed' %}
+                                <span class="status-badge success"><i class="fas fa-check-circle"></i> مكتمل</span>
                             {% elif req.status == 'rejected' %}
-                                <span class="status-badge danger"><i class="fas fa-times"></i> مرفوض</span>
-                            {% else %}
-                                <span class="status-badge default">{{ req.get_status_display }}</span>
+                                <span class="status-badge danger"><i class="fas fa-times-circle"></i> مرفوض</span>
                             {% endif %}
                         </td>
 
@@ -157,15 +172,51 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" class="empty-state">
-                            <i class="fas fa-folder-open"></i>
-                            <p>لا توجد طلبات مطابقة لعملية البحث.</p>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <i class="fas fa-folder-open"></i>
+                                <h3>لا توجد طلبات</h3>
+                                <p>لم يتم العثور على أي نتائج مطابقة لبحثك.</p>
+                                {% if request.user.company.company_type == 'client' %}
+                                <a href="{% url 'requests:create_wizard' %}" class="btn-action small" style="margin-top: 15px;">إنشاء طلب جديد</a>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+
+        {% if is_paginated %}
+        <div class="pagination-wrapper">
+            <div class="pagination-info">
+                عرض الصفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}
+            </div>
+            <div class="pagination-controls">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="page-link prev"><i class="fas fa-chevron-right"></i></a>
+                {% else %}
+                    <span class="page-link disabled"><i class="fas fa-chevron-right"></i></span>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <span class="page-link active">{{ num }}</span>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <a href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="page-link">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="page-link next"><i class="fas fa-chevron-left"></i></a>
+                {% else %}
+                    <span class="page-link disabled"><i class="fas fa-chevron-left"></i></span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
     </div>
 
 </section>
@@ -184,8 +235,9 @@
 
     .dashboard-wrapper {
         direction: rtl;
-        margin-right: 80px; /* Adjust based on sidebar */
+        margin-right: 80px; 
         transition: margin 0.4s;
+        padding-bottom: 60px;
     }
 
     /* --- Header Styles --- */
@@ -210,7 +262,7 @@
     .db-header h1 { font-size: 24px; font-weight: 800; color: var(--dark); margin: 0; }
     .db-header p { color: #64748b; margin: 5px 0 0 0; font-size: 14px; }
 
-    /* --- Action Button with Pulse --- */
+    /* --- Action Button --- */
     .btn-action {
         background: var(--dark);
         color: white;
@@ -222,6 +274,7 @@
         transition: 0.3s;
     }
     .btn-action:hover { background: var(--primary-dark); transform: translateY(-3px); }
+    .btn-action.small { padding: 8px 20px; font-size: 13px; display: inline-flex; }
 
     .pulse-animation { animation: pulse 2s infinite; }
     @keyframes pulse {
@@ -255,7 +308,6 @@
         font-size: 16px; margin-bottom: 10px;
     }
     
-    /* Colors for stats */
     .blue { background: #eff6ff; color: #3b82f6; }
     .purple { background: #f5f3ff; color: #7c3aed; }
     .orange { background: #fff7ed; color: #ea580c; }
@@ -265,10 +317,9 @@
 
     .stat-info .label { display: block; color: #64748b; font-size: 12px; margin-bottom: 5px; }
     .stat-info .count { font-size: 24px; font-weight: 800; color: var(--dark); }
-    
     .mini-chart { height: 4px; border-radius: 2px; margin-top: 10px; opacity: 0.5; }
 
-    /* --- Main Data Card & Search --- */
+    /* --- Data Card & Filters --- */
     .data-card {
         background: white;
         border-radius: 24px;
@@ -276,42 +327,38 @@
         box-shadow: var(--card-shadow);
     }
 
-    .card-header-row {
+    .filter-header {
         display: flex; justify-content: space-between; align-items: center;
         margin-bottom: 25px; flex-wrap: wrap; gap: 15px;
     }
-    .card-header-row h3 { margin: 0; font-size: 18px; color: var(--dark); display: flex; align-items: center; gap: 10px; }
+    .filter-header h3 { margin: 0; font-size: 18px; color: var(--dark); display: flex; align-items: center; gap: 10px; }
 
-    .search-container { display: flex; gap: 10px; flex: 1; max-width: 500px; }
-    .search-box {
-        position: relative; flex: 1;
-    }
+    .filter-form { display: flex; gap: 15px; flex: 1; max-width: 600px; justify-content: flex-end; }
+    
+    .search-box { position: relative; flex: 2; }
     .search-box input {
-        width: 100%; padding: 12px 45px 12px 15px;
+        width: 100%; padding: 10px 40px 10px 15px;
         border: 1px solid #e2e8f0; border-radius: 12px;
         background: #f8fafc; outline: none; transition: 0.3s;
     }
-    .search-box input:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
-    .search-box i {
-        position: absolute; right: 15px; top: 50%; transform: translateY(-50%);
-        color: #94a3b8;
-    }
-    .btn-search {
-        background: var(--primary); color: white; border: none;
-        padding: 0 20px; border-radius: 12px; cursor: pointer; font-weight: bold;
-        transition: 0.3s;
-    }
-    .btn-search:hover { background: var(--primary-dark); }
+    .search-box input:focus { border-color: var(--primary); background: white; }
+    .search-box i { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8; }
 
-    /* --- Table Styling --- */
+    .select-box { flex: 1; }
+    .select-box select {
+        width: 100%; padding: 10px; border: 1px solid #e2e8f0;
+        border-radius: 12px; background: white; cursor: pointer; outline: none;
+    }
+
+    /* --- Table Styles --- */
     .modern-table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
     .modern-table th { text-align: right; color: #94a3b8; font-weight: 500; padding: 10px 15px; font-size: 13px; }
     .modern-table td { background: #f8fafc; padding: 15px; border: none; vertical-align: middle; transition: 0.2s; }
-    .modern-table tr:hover td { background: #f1f5f9; transform: scale(1.005); }
+    .modern-table tr:hover td { background: #f1f5f9; transform: scale(1.002); }
     .modern-table tr td:first-child { border-radius: 0 12px 12px 0; }
     .modern-table tr td:last-child { border-radius: 12px 0 0 12px; }
 
-    /* Table Content Cells */
+    /* Cells */
     .id-cell { font-family: monospace; font-weight: bold; color: var(--primary); }
     .type-cell { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--dark); }
     .type-icon { color: #94a3b8; font-size: 12px; }
@@ -326,33 +373,46 @@
     .user-info .name { font-weight: bold; color: var(--dark); font-size: 14px; }
     .user-info .sub-text { font-size: 11px; color: #64748b; }
 
+    .company-info { color: #475569; font-weight: 500; display: flex; align-items: center; gap: 5px; }
+    .text-muted { color: #94a3b8; }
+
     /* Badges */
     .status-badge { padding: 5px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px; }
     .status-badge.warning { background: #fff7ed; color: #c2410c; }
     .status-badge.info { background: #eff6ff; color: #2563eb; }
     .status-badge.success { background: #f0fdf4; color: #16a34a; }
     .status-badge.danger { background: #fef2f2; color: #dc2626; }
+    .status-badge.orange { background: #fff7ed; color: #ea580c; }
     .status-badge.default { background: #f1f5f9; color: #475569; }
 
-    /* Action Buttons */
     .btn-icon-view {
         width: 35px; height: 35px; border-radius: 10px;
         background: white; border: 1px solid #e2e8f0;
         color: #64748b; display: flex; align-items: center; justify-content: center;
         transition: 0.3s; text-decoration: none;
     }
-    .btn-icon-view:hover {
-        background: var(--primary); color: white; border-color: var(--primary);
-        box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
-    }
+    .btn-icon-view:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+    .clickable-row { cursor: pointer; }
 
     .empty-state { text-align: center; padding: 40px; color: #94a3b8; }
     .empty-state i { font-size: 40px; margin-bottom: 15px; opacity: 0.5; }
 
+    /* --- Pagination --- */
+    .pagination-wrapper { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; padding-top: 20px; border-top: 1px solid #f1f5f9; }
+    .pagination-info { font-size: 13px; color: #64748b; }
+    .pagination-controls { display: flex; gap: 5px; }
+    .page-link { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid #e2e8f0; color: var(--dark); text-decoration: none; transition: 0.2s; cursor: pointer; }
+    .page-link:hover, .page-link.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .page-link.disabled { background: #f8fafc; color: #cbd5e1; cursor: not-allowed; }
+
     /* Responsive */
     @media (max-width: 768px) {
-        .card-header-row { flex-direction: column; align-items: stretch; }
-        .search-container { max-width: 100%; }
+        .db-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+        .header-actions { width: 100%; }
+        .btn-action { width: 100%; justify-content: center; }
+        .filter-header { flex-direction: column; align-items: stretch; }
+        .filter-form { flex-direction: column; max-width: 100%; }
         .stats-grid { grid-template-columns: 1fr 1fr; }
     }
 </style>
