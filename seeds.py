@@ -17,7 +17,7 @@ def create_seeds():
     fake = Faker() 
     
     # أسماء شركات التجربة
-    target_companies = ['ABDAL', 'MAHARAH', 'SAED']
+    target_companies = ['ABDAL', 'MAHARAH', 'SAED','IRC']
     vendors_objs = []
 
     print("--- 1. Preparing Companies and Vendors ---")
@@ -96,7 +96,7 @@ def create_seeds():
             )
             workers_count += 1
 
-    print(f"✅ Success! Added {workers_count} workers distributed among the 3 companies.")
+    print(f"✅ Success! Added {workers_count} workers distributed among the 4 companies.")
 
 if __name__ == '__main__':
     create_seeds()

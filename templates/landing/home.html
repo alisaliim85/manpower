@@ -1,86 +1,382 @@
 {% extends "layout/index.html" %}
 {% block content %}
+{% load static %}
 
-<section class="hero">
-    <div class="container">
-        <div class="hero-content animate__animated animate__zoomIn">
-            <span class="badge">الجيل الجديد من الإدارة</span>
-            <h1>نظام مواردي الرقمي <br> <span class="highlight">لإدارة الكوادر البشرية</span></h1>
-            <p>حلول ذكية لربط الشركات بموردي العمالة بكفاءة وشفافية مطلقة.</p>
-            <div class="hero-btns">
-                <a href="/accounts/login/" class="btn-main">ابدأ رحلتك الآن <i class="fas fa-rocket"></i></a>
-                <a href="#services" class="btn-sec">تعرف علينا</a>
+<div class="landing-wrapper" dir="rtl">
+
+    <section class="hero-section">
+        <div class="container">
+            <div class="hero-grid">
+                <div class="hero-content animate__animated animate__fadeInRight">
+                    <span class="status-badge">
+                        <i class="fas fa-check-circle"></i> النظام الأول لإدارة القوى العاملة
+                    </span>
+                    <h1>
+                        ارتقِ بإدارة كوادر <br>
+                        العمل مع <span class="text-primary">نظام مواردي</span>
+                    </h1>
+                    <p>
+                        منصة رقمية موحدة تربط بين الشركات ومزودي خدمات العمالة. 
+                        تحكم كامل، شفافية مطلقة، وسرعة في الإنجاز.
+                    </p>
+                    
+                    <div class="hero-actions">
+                        <a href="/accounts/register/" class="btn-action">
+                            <i class="fas fa-user-plus"></i> انضم إلينا الآن
+                        </a>
+                        <a href="#features" class="btn-outline">
+                            <i class="fas fa-play"></i> جولة تعريفية
+                        </a>
+                    </div>
+
+                    <div class="hero-stats">
+                        <div class="stat-item">
+                            <h3>+500</h3>
+                            <p>شركة مستفيدة</p>
+                        </div>
+                        <div class="stat-separator"></div>
+                        <div class="stat-item">
+                            <h3>98%</h3>
+                            <p>نسبة الرضا</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="hero-visual animate__animated animate__fadeInLeft" style="animation-delay: 0.2s;">
+                    <div class="visual-card">
+                        <div class="floating-icon icon-1"><i class="fas fa-file-contract"></i></div>
+                        <div class="floating-icon icon-2"><i class="fas fa-users"></i></div>
+                        <img src="{% static 'images/landing page pic-mawardi.png' %}" alt="Mawardy System Dashboard" class="hero-dashboard-img">
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="wave-shape"></div>
-</section>
+        <div class="wave-bottom">
+            <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0 60C240 140 480 20 720 60C960 100 1200 0 1440 40V120H0V60Z" fill="#f8fafc"/>
+            </svg>
+        </div>
+    </section>
 
-<section id="features" class="container">
-    <div class="section-title">
-        <h2>لماذا تختار مواردي؟</h2>
-        <p>نقدم لك أدوات متكاملة لتسهيل العمليات اليومية</p>
-    </div>
-    <div class="grid">
-        <div class="card animate__animated animate__fadeInUp" style="animation-delay: 0.1s">
-            <i class="fas fa-bolt icon"></i>
-            <h3>طلبات ديناميكية</h3>
-            <p>أنظمة مرنة تتكيف مع احتياجات قسم الموارد البشرية لديك.</p>
+    <section id="features" class="section-padding bg-light">
+        <div class="container">
+            <div class="section-header">
+                <h2>خدمات متكاملة لمنشأتك</h2>
+                <p>صمم نظام مواردي ليغطي كافة احتياجاتك التشغيلية</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card animate__animated animate__fadeInUp" style="animation-delay: 0.1s;">
+                    <div class="icon-wrapper">
+                        <i class="fas fa-network-wired"></i>
+                    </div>
+                    <h3>الربط الإلكتروني</h3>
+                    <p>ربط مباشر ولحظي مع منصات التوظيف الحكومية ومزودي الخدمات لضمان الامتثال.</p>
+                </div>
+
+                <div class="feature-card animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+                    <div class="icon-wrapper">
+                        <i class="fas fa-file-signature"></i>
+                    </div>
+                    <h3>العقود الرقمية</h3>
+                    <p>أتمتة كاملة لدورة حياة العقود، من الإنشاء والمراجعة وحتى التوقيع الإلكتروني.</p>
+                </div>
+
+                <div class="feature-card animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
+                    <div class="icon-wrapper">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <h3>لوحة تحكم ذكية</h3>
+                    <p>تقارير وإحصائيات دقيقة تساعدك على اتخاذ القرارات بناءً على بيانات حقيقية.</p>
+                </div>
+            </div>
         </div>
-        <div class="card animate__animated animate__fadeInUp" style="animation-delay: 0.2s">
-            <i class="fas fa-shield-alt icon"></i>
-            <h3>اعتماد مركزي</h3>
-            <p>دورة عمل واضحة للموافقات تضمن السرعة والدقة.</p>
+    </section>
+
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-box animate__animated animate__zoomIn" style="animation-delay: 0.2s;">
+                <h2>جاهز لتغيير طريقة عملك؟</h2>
+                <p>انضم لمئات الشركات التي تثق بنظام مواردي اليوم.</p>
+                <a href="/contact/" class="btn-action cta-btn">
+                    تواصل مع المبيعات <i class="fas fa-arrow-left"></i>
+                </a>
+            </div>
         </div>
-        <div class="card animate__animated animate__fadeInUp" style="animation-delay: 0.3s">
-            <i class="fas fa-chart-line icon"></i>
-            <h3>سهولة الاستخدام</h3>
-            <p>واجهة عصرية لا تتطلب تدريباً طويلاً لفهمها.</p>
-        </div>
-    </div>
-</section>
+    </section>
+
+</div>
 
 <style>
-    .hero {
-        padding: 120px 0 160px;
-        text-align: center;
-        background: linear-gradient(rgba(220, 252, 231, 0.7), rgba(248, 250, 252, 1)), 
-                    url('https://www.transparenttextures.com/patterns/cubes.png');
+    /* --- 1. Design System Variables --- */
+    :root {
+        --primary: #10b981;
+        --primary-dark: #059669;
+        --secondary: #3b82f6;
+        --dark: #1e293b;
+        --text-gray: #64748b;
+        --light-bg: #f8fafc;
+        --white: #ffffff;
+        --shadow-card: 0 10px 40px rgba(0, 0, 0, 0.02);
+        --shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.08);
+        --radius: 24px;
+    }
+
+    /* --- 2. Base Animations & Keyframes --- */
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); transform: scale(1); }
+        70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); transform: scale(1.02); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); transform: scale(1); }
+    }
+
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-15px); }
+        100% { transform: translateY(0px); }
+    }
+
+    /* --- 3. Layout & Typography --- */
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Fallback font */
+        background-color: var(--light-bg);
+        color: var(--dark);
+        margin: 0;
+        overflow-x: hidden;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .text-primary { color: var(--primary); }
+    .bg-light { background-color: var(--light-bg); }
+
+    /* --- 4. Hero Section --- */
+    .hero-section {
+        background: linear-gradient(135deg, rgba(220, 252, 231, 0.4) 0%, #ffffff 100%);
+        padding: 140px 0 100px;
         position: relative;
+        overflow: hidden;
     }
-    .badge {
-        background: #dcfce7;
-        color: #166534;
-        padding: 5px 15px;
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: 700;
+
+    .hero-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 60px;
+        align-items: center;
+    }
+
+    .status-badge {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--primary-dark);
+        padding: 8px 16px;
+        border-radius: 50px;
+        font-weight: bold;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
         margin-bottom: 20px;
-        display: inline-block;
     }
-    .hero h1 { font-size: 48px; line-height: 1.3; color: var(--dark); }
-    .highlight { color: var(--primary); }
-    .btn-main {
-        padding: 15px 40px;
+    /* Ensure the container allows the image to fit */
+    .visual-card.image-container {
+        padding: 0; /* Remove padding so image fills the space */
+        overflow: hidden; /* Clips the image to the card's rounded corners */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent; /* Since your image has transparency */
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1); /* Adds a soft shadow behind the image */
+        border-radius: 20px; /* Adjust curve as desired */
+    }
+
+    /* Style the image itself */
+    .hero-dashboard-img {
+        width: 100%;
+        height: auto;
+        object-fit: cover; /* Ensures image covers the area nicely */
+        display: block;
+        mix-blend-mode: normal; /* Ensures transparency works correctly */
+    }
+    .hero-content h1 {
+        font-size: 3.5rem;
+        line-height: 1.2;
+        margin-bottom: 20px;
+        font-weight: 800;
+        color: var(--dark);
+    }
+
+    .hero-content p {
+        font-size: 1.1rem;
+        color: var(--text-gray);
+        line-height: 1.7;
+        margin-bottom: 40px;
+        max-width: 500px;
+    }
+
+    /* --- 5. Buttons & Actions (Strict Rules) --- */
+    .hero-actions {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 50px;
+    }
+
+    .btn-action {
         background: var(--primary);
         color: white;
+        padding: 16px 36px;
         border-radius: 50px;
-        text-decoration: none;
         font-weight: bold;
-        box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        transition: 0.3s ease;
+        border: none;
+        /* Custom Pulse Animation Required */
+        animation: pulse 2s infinite;
     }
-    .section-title { text-align: center; margin-bottom: 50px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
-    .card {
+
+    .btn-action:hover {
+        background: var(--primary-dark);
+        transform: translateY(-2px);
+    }
+
+    .btn-outline {
+        border: 2px solid #e2e8f0;
+        color: var(--dark);
+        padding: 16px 36px;
+        border-radius: 50px;
+        font-weight: bold;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        transition: 0.3s;
+    }
+
+    .btn-outline:hover {
+        border-color: var(--primary);
+        color: var(--primary);
         background: white;
-        padding: 40px;
-        border-radius: 24px;
-        border: 1px solid rgba(0,0,0,0.03);
-        transition: 0.4s;
-        text-align: center;
     }
-    .card:hover { transform: translateY(-10px); box-shadow: 0 25px 50px rgba(0,0,0,0.05); }
-    .icon { font-size: 40px; color: var(--primary); margin-bottom: 20px; }
+
+    /* --- 6. Stats & Visuals --- */
+    .hero-stats {
+        display: flex;
+        align-items: center;
+        gap: 30px;
+    }
+    .stat-item h3 { font-size: 1.8rem; margin: 0; color: var(--dark); }
+    .stat-item p { margin: 0; color: var(--text-gray); font-size: 0.9rem; }
+    .stat-separator { width: 1px; height: 40px; background: #cbd5e1; }
+
+    .visual-card {
+        position: relative;
+        background: white;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-card);
+        height: 400px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(0,0,0,0.03);
+    }
+
+    .main-visual-icon { font-size: 120px; color: #e2e8f0; opacity: 0.5; }
+    
+    .floating-icon {
+        position: absolute;
+        width: 60px;
+        height: 60px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary);
+        font-size: 24px;
+        animation: float 4s ease-in-out infinite;
+    }
+    .icon-1 { top: 40px; right: -20px; animation-delay: 0s; }
+    .icon-2 { bottom: 60px; left: -20px; animation-delay: 2s; }
+
+    /* --- 7. Features Section (Cards) --- */
+    .section-padding { padding: 100px 0; }
+    .section-header { text-align: center; margin-bottom: 70px; }
+    .section-header h2 { font-size: 2.5rem; margin-bottom: 15px; color: var(--dark); }
+    .section-header p { color: var(--text-gray); font-size: 1.1rem; }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+    }
+
+    .feature-card {
+        background: var(--white);
+        border-radius: var(--radius);
+        padding: 40px;
+        box-shadow: var(--shadow-card);
+        border: 1px solid rgba(255,255,255,0.5);
+        transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-10px);
+        box-shadow: var(--shadow-hover);
+        border-color: rgba(16, 185, 129, 0.2);
+    }
+
+    .icon-wrapper {
+        width: 70px;
+        height: 70px;
+        background: rgba(16, 185, 129, 0.1);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 25px;
+        color: var(--primary);
+        font-size: 28px;
+        transition: 0.3s;
+    }
+
+    .feature-card:hover .icon-wrapper {
+        background: var(--primary);
+        color: white;
+    }
+
+    .feature-card h3 { font-size: 1.4rem; margin-bottom: 15px; color: var(--dark); }
+    .feature-card p { color: var(--text-gray); line-height: 1.6; }
+
+    /* --- 8. CTA Section --- */
+    .cta-section { padding: 0 0 100px; }
+    .cta-box {
+        background: var(--dark);
+        border-radius: 30px;
+        padding: 60px;
+        text-align: center;
+        color: white;
+        background-image: url('https://www.transparenttextures.com/patterns/cubes.png');
+    }
+    .cta-box h2 { font-size: 2.5rem; margin-bottom: 15px; }
+    .cta-box p { color: #94a3b8; margin-bottom: 40px; font-size: 1.2rem; }
+    .cta-btn { background: white; color: var(--dark); animation: none; } /* Override pulse for this specific btn if needed, or keep it */
+    .cta-btn:hover { background: #f1f5f9; transform: scale(1.05); }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+        .hero-grid { grid-template-columns: 1fr; text-align: center; }
+        .hero-actions { justify-content: center; }
+        .hero-stats { justify-content: center; margin-top: 30px; }
+        .hero-visual { display: none; } /* Hide heavy visuals on mobile */
+    }
 </style>
 
 {% endblock %}

@@ -85,7 +85,7 @@
               <div class="worker-info">
                 <div class="worker-name">{{ worker.full_name }}</div>
                 <div class="worker-sub">
-                  <span class="badge-soft">{{ worker.job_title }}</span>
+                  <span class="badge-soft">{{ worker.vendor }}</span>
                   <span class="worker-id">رقم الإقامة: {{ worker.iqama_number }}</span>
                 </div>
               </div>
@@ -123,25 +123,25 @@
         </div>
       </div>
 
-      <div class="step-body">
-        <div class="row g-3">
-          {% for type in request_types %}
-          <div class="col-12 col-md-6">
-            <label class="service-tile">
-              <input type="radio" name="request_type" value="{{ type.id }}" required />
-              <div class="tile">
-                <div class="tile-ico"><i class="fas fa-file-alt"></i></div>
-                <div class="tile-text">
-                  <h6 class="mb-1">{{ type.name }}</h6>
-                  <span>اضغط للاختيار</span>
-                </div>
-                <div class="tile-check"><i class="fas fa-check"></i></div>
-              </div>
-            </label>
+  <div class="step-body">
+  <div class="row g-3">
+    {% for type in request_types %}
+    <div class="col-6 col-md-6">
+      <label class="service-tile">
+        <input type="radio" name="request_type" value="{{ type.id }}" required />
+        <div class="tile">
+          <div class="tile-ico"><i class="fas fa-file-alt"></i></div>
+          <div class="tile-text">
+            <h6 class="mb-1">{{ type.name }}</h6>
+            <span>اضغط للاختيار</span>
           </div>
-          {% endfor %}
+          <div class="tile-check"><i class="fas fa-check"></i></div>
         </div>
-      </div>
+      </label>
+    </div>
+    {% endfor %}
+  </div>
+</div>
 
       <div class="step-footer sticky-footer between">
         <button type="button" class="btn brand-outline" onclick="prevStep(1)">
