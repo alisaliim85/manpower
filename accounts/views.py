@@ -2,7 +2,9 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from .decorators import company_access_required
-from vendors.models import Vendor
+from vendors.models import Vendor, Worker
+from requests.models import Request
+from django.db.models import Q
 
 
 def landing_page(request):
@@ -72,7 +74,33 @@ def client_dashboard(request):
 
 @company_access_required('vendor')
 def vendor_dashboard(request):
-    return render(request, 'vendor/dashboard.html')
+    user_company = request.user.company
+    
+    # التأكد أن المستخدم يتبع لشركة من نوع مورد (vendor)
+    if user_company and user_company.company_type == 'vendor':
+        # جلب الطلبات المرتبطة بعمال هذا المورد فقط
+        # نستثني المسودات (draft) لأن المورد لا يجب أن يراها حتى يتم إرسالها
+        base_requests = Request.objects.filter(
+            worker__vendor__company=user_company
+        ).exclude(status='draft')
+        
+        # حساب الإحصائيات
+        stats = {
+            'workers_count': Worker.objects.filter(vendor__company=user_company).count(),
+            'total_incoming': base_requests.count(),
+            'new_requests': base_requests.filter(status='submitted').count(),
+            'in_progress': base_requests.filter(status='in_progress').count(),
+            'completed': base_requests.filter(status='completed').count(),
+            'returned_rejected': base_requests.filter(status__in=['returned', 'rejected']).count(),
+            'recent_requests': base_requests.order_by('-created_at')[:5]
+        }
+    else:
+        stats = {}
+
+    context = {
+        'stats': stats,
+    }
+    return render(request, 'vendor/dashboard.html', context)
 
 
 def logout_view(request):

@@ -223,14 +223,15 @@
                     <form method="post" enctype="multipart/form-data" class="upload-form">
                         {% csrf_token %}
                         <input type="hidden" name="action" value="upload_attachment">
+                        
                         <div class="upload-inputs">
                             <div class="file-input-wrapper">
-                                <input type="file" name="attachment_file" id="file-upload" required>
+                                <input type="file" name="file" id="file-upload" required>
                                 <label for="file-upload" class="file-label">
                                     <i class="fas fa-cloud-upload-alt"></i> اختر ملف
                                 </label>
                             </div>
-                            <input type="text" name="attachment_desc" placeholder="وصف الملف..." class="desc-input">
+                            <input type="text" name="description" placeholder="وصف الملف..." class="desc-input">
                             <button type="submit" class="btn-action pulse-animation small-btn"><i class="fas fa-plus"></i> رفع</button>
                         </div>
                     </form>
@@ -266,7 +267,7 @@
                         {% csrf_token %}
                         <input type="hidden" name="action" value="add_comment">
                         <div class="comment-input-wrapper">
-                            <textarea name="comment_body" rows="2" placeholder="اكتب ملاحظة أو رد هنا..." required></textarea>
+                            <textarea name="body" rows="2" placeholder="اكتب ملاحظة أو رد هنا..." required></textarea>
                             <button type="submit" class="btn-send" title="إرسال"><i class="fas fa-paper-plane"></i></button>
                         </div>
                     </form>
@@ -274,7 +275,9 @@
                 {% endif %}
             </div>
 
-        </div> <div class="sidebar-column animate__animated animate__fadeInLeft">
+        </div> 
+        
+        <div class="sidebar-column animate__animated animate__fadeInLeft">
             
             <div class="data-card sticky-sidebar">
                 <div class="card-header-simple">
@@ -310,7 +313,9 @@
                 </div>
             </div>
 
-        </div> </div> </section>
+        </div> 
+    </div> 
+</section>
 
 <div id="rejectModal" class="modal-overlay">
     <div class="modal-content animate__animated animate__zoomIn">

@@ -188,14 +188,17 @@
             </table>
         </div>
 
-        {% if is_paginated %}
+        {% if is_paginated or page_obj.has_other_pages %}
         <div class="pagination-wrapper">
             <div class="pagination-info">
                 عرض الصفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}
             </div>
             <div class="pagination-controls">
+                
                 {% if page_obj.has_previous %}
-                    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="page-link prev"><i class="fas fa-chevron-right"></i></a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% if current_q %}&q={{ current_q }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}" class="page-link prev">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
                 {% else %}
                     <span class="page-link disabled"><i class="fas fa-chevron-right"></i></span>
                 {% endif %}
@@ -204,12 +207,14 @@
                     {% if page_obj.number == num %}
                         <span class="page-link active">{{ num }}</span>
                     {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                        <a href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="page-link">{{ num }}</a>
+                        <a href="?page={{ num }}{% if current_q %}&q={{ current_q }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}" class="page-link">{{ num }}</a>
                     {% endif %}
                 {% endfor %}
 
                 {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="page-link next"><i class="fas fa-chevron-left"></i></a>
+                    <a href="?page={{ page_obj.next_page_number }}{% if current_q %}&q={{ current_q }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}" class="page-link next">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
                 {% else %}
                     <span class="page-link disabled"><i class="fas fa-chevron-left"></i></span>
                 {% endif %}

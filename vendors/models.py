@@ -30,6 +30,7 @@ class Vendor(models.Model):
         default=True,
         verbose_name='نشطة'
     )
+    clients = models.ManyToManyField(Company,related_name='contracted_vendors',limit_choices_to={'company_type': 'client'},verbose_name='العملاء المتعاقد معهم',blank=True)
 
     @property
     def get_all_staff(self):
