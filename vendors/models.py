@@ -1,5 +1,6 @@
 from django.db import models
 from accounts.models import Company
+from cloudinary.models import CloudinaryField
 
 
 class Vendor(models.Model):
@@ -31,6 +32,7 @@ class Vendor(models.Model):
         verbose_name='نشطة'
     )
     clients = models.ManyToManyField(Company,related_name='contracted_vendors',limit_choices_to={'company_type': 'client'},verbose_name='العملاء المتعاقد معهم',blank=True)
+    profile_picture = CloudinaryField(blank=True, null=True, verbose_name='صورة الملف التعريفي')
 
     @property
     def get_all_staff(self):

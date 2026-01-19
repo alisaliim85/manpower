@@ -1,5 +1,8 @@
 
 from pathlib import Path
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -24,6 +27,7 @@ INSTALLED_APPS = [
     'vendors',
     'requests',
     'notifications',
+    'cloudinary',
 ]
 
 MIDDLEWARE = [
@@ -106,3 +110,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.User'
+
+
+cloudinary.config( 
+  cloud_name = "dir6xawfa", 
+  api_key = "245253167538322", 
+  api_secret = "IV9yItSyR1LSwTYzVqp0Zir8CQk" 
+)
