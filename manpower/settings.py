@@ -16,8 +16,8 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'default-insecure-key')
 
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['*']
-CSRF_TRUSTED_ORIGINS = ['https://*.onrender.com']
+ALLOWED_HOSTS = ['manpower-90qg.onrender.com', 'localhost', '127.0.0.1']
+CSRF_TRUSTED_ORIGINS = ['https://manpower-90qg.onrender.com']
 
 
 
