@@ -4,7 +4,7 @@ from django.contrib import messages
 from .decorators import company_access_required
 from vendors.models import Vendor, Worker
 from requests.models import Request
-from django.db.models import Q
+from django.db.models import Q, Count
 
 
 def landing_page(request):
@@ -59,7 +59,7 @@ def redirect_by_company(user):
 @company_access_required('client')
 def client_dashboard(request):
     # 1. جلب جميع الموردين من قاعدة البيانات
-    vendors_list = Vendor.objects.all()
+    vendors_list = Vendor.objects.select_related('company').annotate(workers_count=Count('workers'))
     
     # 2. تجهيز البيانات لإرسالها للقالب
     context = {

@@ -123,7 +123,7 @@
                         <div class="vendor-logo"><i class="fas fa-building"></i></div>
                         <div>
                             <h4>{{ vendor.company.name }}</h4>
-                            <p><i class="fas fa-users"></i> {{ vendor.workers.count }} عامل</p>
+                            <p><i class="fas fa-users"></i> {{ vendor.workers_count }} عامل</p>
                         </div>
                     </div>
                     <a href="{% url 'vendors:vendor_detail' vendor.pk %}" class="btn-details">
