@@ -44,23 +44,7 @@ def create_request_wizard(request):
     if request.user.company.company_type != 'client':
         messages.error(request, "عذراً، إنشاء الطلبات متاح لشركات العملاء فقط.")
         return redirect('dashboard')
-    # --- DEBUGGING START ---
-    print(f"User: {request.user.username}")
-    print(f"My Company: {request.user.company}")
-    print(f"My Company Type: {request.user.company.company_type}")
 
-    # لنحاول جلب العمال يدوياً لنرى هل توجد نتائج
-    workers_test = Worker.objects.filter(vendor__clients=request.user.company)
-    print(f"Workers Found Count: {workers_test.count()}")
-
-    if workers_test.count() == 0:
-        print("WARNING: No workers found. Checking Vendors...")
-        # لنفحص الموردين المتعاقد معهم
-        vendors = request.user.company.contracted_vendors.all() # لاحظ استخدام related_name العكسي
-        print(f"Contracted Vendors Count: {vendors.count()}")
-        for v in vendors:
-            print(f" - Vendor: {v.id} | Workers Count: {v.worker_set.count()}")
-    # --- DEBUGGING END ---    
     if request.method == 'POST':
         form = RequestCreateForm(request.POST, user=request.user)
         if form.is_valid():
