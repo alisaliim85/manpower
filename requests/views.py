@@ -111,7 +111,11 @@ def request_list(request):
     user = request.user
     
     # 1. الاستعلام الأساسي
-    qs = Request.objects.select_related('worker', 'request_type', 'created_by').order_by('-created_at')
+    qs = Request.objects.select_related(
+        'worker__vendor__company',
+        'request_type',
+        'created_by__company'
+    ).order_by('-created_at')
 
     # 2. التصفية حسب الصلاحية
     if user.company.company_type == 'client':
@@ -168,7 +172,11 @@ def request_list(request):
 def request_detail(request, pk):
     # جلب الطلب مع التحقق من الصلاحية
     user = request.user
-    base_qs = Request.objects.select_related('worker', 'request_type', 'created_by')
+    base_qs = Request.objects.select_related(
+        'worker__vendor__company',
+        'request_type',
+        'created_by__company'
+    )
     
     if user.company.company_type == 'client':
         req = get_object_or_404(base_qs, pk=pk, created_by__company=user.company)
