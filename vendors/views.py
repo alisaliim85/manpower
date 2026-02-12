@@ -78,7 +78,7 @@ class VendorListView(LoginRequiredMixin,UserPassesTestMixin, ListView): # تصح
 
     def get_queryset(self):
         # تحسين الأداء: جلب الشركات مع عدد العمال في استعلام واحد
-        return Vendor.objects.annotate(workers_count=Count('workers')).all()
+        return Vendor.objects.select_related('company').annotate(workers_count=Count('workers')).order_by('-id')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
